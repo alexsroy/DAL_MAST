@@ -1,0 +1,34 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from tutorial_interfaces/msg/PCB.msg
+// generated code does not contain a copyright notice
+
+
+module tutorial_interfaces {
+  module msg {
+    struct PCB {
+      double wind_speed;
+
+      double wind_direction;
+
+      double roll;
+
+      double pitch;
+
+      double yaw;
+
+      double latitude;
+
+      double longitude;
+
+      double heading;
+
+      double sail_angle;
+
+      double sailflap_angle;
+
+      double backflap_angle;
+
+      double rudder_angle;
+    };
+  };
+};

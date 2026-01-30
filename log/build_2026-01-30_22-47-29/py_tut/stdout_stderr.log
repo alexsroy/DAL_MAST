@@ -1,0 +1,59 @@
+running egg_info
+creating ../../build/py_tut/py_tut.egg-info
+writing ../../build/py_tut/py_tut.egg-info/PKG-INFO
+writing dependency_links to ../../build/py_tut/py_tut.egg-info/dependency_links.txt
+writing entry points to ../../build/py_tut/py_tut.egg-info/entry_points.txt
+writing requirements to ../../build/py_tut/py_tut.egg-info/requires.txt
+writing top-level names to ../../build/py_tut/py_tut.egg-info/top_level.txt
+writing manifest file '../../build/py_tut/py_tut.egg-info/SOURCES.txt'
+reading manifest file '../../build/py_tut/py_tut.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file '../../build/py_tut/py_tut.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build
+creating /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib
+creating /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut
+copying py_tut/PCBComm.py -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut
+copying py_tut/navigation.py -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut
+copying py_tut/boatClasses.py -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut
+copying py_tut/controls.py -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut
+copying py_tut/publisher_member_function.py -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut
+copying py_tut/waypointControl.py -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut
+copying py_tut/__init__.py -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut
+copying py_tut/subscriber_member_function.py -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut
+running install
+running install_lib
+creating /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut
+copying /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut/PCBComm.py -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut
+copying /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut/navigation.py -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut
+copying /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut/boatClasses.py -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut
+copying /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut/controls.py -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut
+copying /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut/publisher_member_function.py -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut
+copying /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut/waypointControl.py -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut
+copying /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut/__init__.py -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut
+copying /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/build/lib/py_tut/subscriber_member_function.py -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut
+byte-compiling /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut/PCBComm.py to PCBComm.cpython-312.pyc
+byte-compiling /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut/navigation.py to navigation.cpython-312.pyc
+byte-compiling /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut/boatClasses.py to boatClasses.cpython-312.pyc
+byte-compiling /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut/controls.py to controls.cpython-312.pyc
+byte-compiling /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut/publisher_member_function.py to publisher_member_function.cpython-312.pyc
+byte-compiling /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut/waypointControl.py to waypointControl.cpython-312.pyc
+byte-compiling /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut/__init__.py to __init__.cpython-312.pyc
+byte-compiling /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut/subscriber_member_function.py to subscriber_member_function.cpython-312.pyc
+running install_data
+creating /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/share/ament_index
+creating /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/share/ament_index/resource_index
+creating /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/share/ament_index/resource_index/packages
+copying resource/py_tut -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/share/ament_index/resource_index/packages
+copying package.xml -> /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/share/py_tut
+creating /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/share/py_tut/launch
+running install_egg_info
+Copying ../../build/py_tut/py_tut.egg-info to /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/python3.12/site-packages/py_tut-0.0.0-py3.12.egg-info
+running install_scripts
+Installing boat script to /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/py_tut
+Installing comm script to /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/py_tut
+Installing ctrl script to /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/py_tut
+Installing navi script to /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/py_tut
+Installing wayp script to /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/py_tut/lib/py_tut
+writing list of installed files to '/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/py_tut/install.log'

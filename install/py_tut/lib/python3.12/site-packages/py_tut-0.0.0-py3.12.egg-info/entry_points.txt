@@ -1,0 +1,6 @@
+[console_scripts]
+boat = py_tut.boatClasses:main
+comm = py_tut.PCBComm:main
+ctrl = py_tut.controls:main
+navi = py_tut.navigation:main
+wayp = py_tut.WaypointCTRL:main

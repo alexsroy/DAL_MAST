@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="py_tut" exec="comm" name="sim" namespace="turtlesim1"/>
+  <node pkg="py_tut" exec="boat" name="sim" namespace="turtlesim2"/>
+  <node pkg="py_tut" exec="ctrl" name="sim" namespace="turtlesim3"/>
+  <node pkg="py_tut" exec="navi" name="sim" namespace="turtlesim4"/>
+</launch>

@@ -1,0 +1,20 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from tutorial_interfaces/msg/Navigation.msg
+// generated code does not contain a copyright notice
+
+
+module tutorial_interfaces {
+  module msg {
+    struct Navigation {
+      double waypoint_latitude;
+
+      double waypoint_longitude;
+
+      double tacking_waypoint_latitude;
+
+      double tacking_waypoint_longitude;
+
+      double target_heading;
+    };
+  };
+};
