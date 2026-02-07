@@ -1,16 +1,16 @@
 {
   "package_name": "tutorial_interfaces",
-  "output_dir": "/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/rosidl_generator_c/tutorial_interfaces",
+  "output_dir": "/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/rosidl_generator_c/tutorial_interfaces",
   "template_dir": "/opt/ros/jazzy/share/rosidl_generator_c/cmake/../resource",
   "idl_tuples": [
-    "/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces:msg/PCB.idl",
-    "/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces:msg/Controls.idl",
-    "/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces:msg/Navigation.idl"
+    "/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces:msg/PCB.idl",
+    "/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces:msg/Controls.idl",
+    "/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces:msg/Navigation.idl"
   ],
   "ros_interface_files": [
-    "/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/src/tutorial_interfaces/msg/PCB.msg",
-    "/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/src/tutorial_interfaces/msg/Controls.msg",
-    "/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/src/tutorial_interfaces/msg/Navigation.msg"
+    "/home/alexroy/Documents/DAL_MAST/src/tutorial_interfaces/msg/PCB.msg",
+    "/home/alexroy/Documents/DAL_MAST/src/tutorial_interfaces/msg/Controls.msg",
+    "/home/alexroy/Documents/DAL_MAST/src/tutorial_interfaces/msg/Navigation.msg"
   ],
   "target_dependencies": [
     "/opt/ros/jazzy/share/rosidl_generator_c/cmake/../../../lib/rosidl_generator_c/rosidl_generator_c",
@@ -32,13 +32,13 @@
     "/opt/ros/jazzy/share/rosidl_generator_c/cmake/../resource/msg__type_support.h.em",
     "/opt/ros/jazzy/share/rosidl_generator_c/cmake/../resource/srv__type_support.c.em",
     "/opt/ros/jazzy/share/rosidl_generator_c/cmake/../resource/srv__type_support.h.em",
-    "/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces/msg/PCB.idl",
-    "/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces/msg/Controls.idl",
-    "/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces/msg/Navigation.idl"
+    "/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces/msg/PCB.idl",
+    "/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces/msg/Controls.idl",
+    "/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces/msg/Navigation.idl"
   ],
   "type_description_tuples": [
-    "msg/PCB.idl:/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/rosidl_generator_type_description/tutorial_interfaces/msg/PCB.json",
-    "msg/Controls.idl:/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/rosidl_generator_type_description/tutorial_interfaces/msg/Controls.json",
-    "msg/Navigation.idl:/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/rosidl_generator_type_description/tutorial_interfaces/msg/Navigation.json"
+    "msg/PCB.idl:/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/rosidl_generator_type_description/tutorial_interfaces/msg/PCB.json",
+    "msg/Controls.idl:/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/rosidl_generator_type_description/tutorial_interfaces/msg/Controls.json",
+    "msg/Navigation.idl:/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/rosidl_generator_type_description/tutorial_interfaces/msg/Navigation.json"
   ]
 }

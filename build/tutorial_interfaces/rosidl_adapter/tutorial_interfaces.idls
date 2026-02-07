@@ -1,3 +1,3 @@
-/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces:msg/PCB.idl
-/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces:msg/Controls.idl
-/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces:msg/Navigation.idl
+/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces:msg/PCB.idl
+/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces:msg/Controls.idl
+/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces:msg/Navigation.idl

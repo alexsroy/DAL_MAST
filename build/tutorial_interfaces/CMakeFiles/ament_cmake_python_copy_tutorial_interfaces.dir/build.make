@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/src/tutorial_interfaces
+CMAKE_SOURCE_DIR = /home/alexroy/Documents/DAL_MAST/src/tutorial_interfaces
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces
+CMAKE_BINARY_DIR = /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces
 
 # Utility rule file for ament_cmake_python_copy_tutorial_interfaces.
 
@@ -67,7 +67,7 @@ include CMakeFiles/ament_cmake_python_copy_tutorial_interfaces.dir/compiler_depe
 include CMakeFiles/ament_cmake_python_copy_tutorial_interfaces.dir/progress.make
 
 CMakeFiles/ament_cmake_python_copy_tutorial_interfaces:
-	/usr/bin/cmake -E copy_directory /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/rosidl_generator_py/tutorial_interfaces /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/ament_cmake_python/tutorial_interfaces/tutorial_interfaces
+	/usr/bin/cmake -E copy_directory /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/rosidl_generator_py/tutorial_interfaces /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/ament_cmake_python/tutorial_interfaces/tutorial_interfaces
 
 ament_cmake_python_copy_tutorial_interfaces: CMakeFiles/ament_cmake_python_copy_tutorial_interfaces
 ament_cmake_python_copy_tutorial_interfaces: CMakeFiles/ament_cmake_python_copy_tutorial_interfaces.dir/build.make
@@ -82,6 +82,6 @@ CMakeFiles/ament_cmake_python_copy_tutorial_interfaces.dir/clean:
 .PHONY : CMakeFiles/ament_cmake_python_copy_tutorial_interfaces.dir/clean
 
 CMakeFiles/ament_cmake_python_copy_tutorial_interfaces.dir/depend:
-	cd /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/src/tutorial_interfaces /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/src/tutorial_interfaces /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/CMakeFiles/ament_cmake_python_copy_tutorial_interfaces.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/alexroy/Documents/DAL_MAST/src/tutorial_interfaces /home/alexroy/Documents/DAL_MAST/src/tutorial_interfaces /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/CMakeFiles/ament_cmake_python_copy_tutorial_interfaces.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : CMakeFiles/ament_cmake_python_copy_tutorial_interfaces.dir/depend
 

@@ -4,7 +4,7 @@
 # compile C with /usr/bin/cc
 C_DEFINES = -DROSIDL_GENERATOR_C_BUILDING_DLL_tutorial_interfaces -DROS_PACKAGE_NAME=\"tutorial_interfaces\"
 
-C_INCLUDES = -I/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/rosidl_generator_c -isystem /opt/ros/jazzy/include/rosidl_runtime_c -isystem /opt/ros/jazzy/include/rcutils -isystem /opt/ros/jazzy/include/rosidl_typesupport_interface
+C_INCLUDES = -I/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/rosidl_generator_c -isystem /opt/ros/jazzy/include/rosidl_runtime_c -isystem /opt/ros/jazzy/include/rcutils -isystem /opt/ros/jazzy/include/rosidl_typesupport_interface
 
 C_FLAGS = -std=gnu11 -fPIC -Wall
 

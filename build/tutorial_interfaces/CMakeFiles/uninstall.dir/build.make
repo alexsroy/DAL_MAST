@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/src/tutorial_interfaces
+CMAKE_SOURCE_DIR = /home/alexroy/Documents/DAL_MAST/src/tutorial_interfaces
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces
+CMAKE_BINARY_DIR = /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces
 
 # Utility rule file for uninstall.
 
@@ -78,6 +78,6 @@ CMakeFiles/uninstall.dir/clean:
 .PHONY : CMakeFiles/uninstall.dir/clean
 
 CMakeFiles/uninstall.dir/depend:
-	cd /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/src/tutorial_interfaces /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/src/tutorial_interfaces /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/CMakeFiles/uninstall.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/alexroy/Documents/DAL_MAST/src/tutorial_interfaces /home/alexroy/Documents/DAL_MAST/src/tutorial_interfaces /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/CMakeFiles/uninstall.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : CMakeFiles/uninstall.dir/depend
 

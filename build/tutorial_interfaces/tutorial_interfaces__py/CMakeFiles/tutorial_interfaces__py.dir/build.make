@@ -53,29 +53,29 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/src/tutorial_interfaces
+CMAKE_SOURCE_DIR = /home/alexroy/Documents/DAL_MAST/src/tutorial_interfaces
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces
+CMAKE_BINARY_DIR = /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces
 
 # Utility rule file for tutorial_interfaces__py.
 
 # Include any custom commands dependencies for this target.
-include /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/compiler_depend.make
+include /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/compiler_depend.make
 
 # Include the progress variables for this target.
-include /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/progress.make
+include /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/progress.make
 
-/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c
-/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_introspection_c.c
-/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_c.c
-/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_pcb.py
-/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_controls.py
-/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_navigation.py
-/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/__init__.py
-/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_pcb_s.c
-/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_controls_s.c
-/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_navigation_s.c
+/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c
+/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_introspection_c.c
+/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_c.c
+/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_pcb.py
+/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_controls.py
+/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_navigation.py
+/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/__init__.py
+/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_pcb_s.c
+/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_controls_s.c
+/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_navigation_s.c
 
 rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /opt/ros/jazzy/lib/rosidl_generator_py/rosidl_generator_py
 rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /opt/ros/jazzy/lib/python3.12/site-packages/rosidl_generator_py/__init__.py
@@ -93,8 +93,8 @@ rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesup
 rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: rosidl_adapter/tutorial_interfaces/msg/PCB.idl
 rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: rosidl_adapter/tutorial_interfaces/msg/Controls.idl
 rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: rosidl_adapter/tutorial_interfaces/msg/Navigation.idl
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating Python code for ROS interfaces"
-	cd /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py && /usr/bin/python3 /opt/ros/jazzy/share/rosidl_generator_py/cmake/../../../lib/rosidl_generator_py/rosidl_generator_py --generator-arguments-file /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/rosidl_generator_py__arguments.json --typesupport-impls "rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c;rosidl_typesupport_c"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating Python code for ROS interfaces"
+	cd /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py && /usr/bin/python3 /opt/ros/jazzy/share/rosidl_generator_py/cmake/../../../lib/rosidl_generator_py/rosidl_generator_py --generator-arguments-file /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/rosidl_generator_py__arguments.json --typesupport-impls "rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c;rosidl_typesupport_c"
 
 rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_introspection_c.c: rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_introspection_c.c
@@ -133,19 +133,19 @@ tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_navigation
 tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_navigation_s.c
 tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_pcb.py
 tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_pcb_s.c
-tutorial_interfaces__py: /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py
-tutorial_interfaces__py: /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/build.make
+tutorial_interfaces__py: /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py
+tutorial_interfaces__py: /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/build.make
 .PHONY : tutorial_interfaces__py
 
 # Rule to build all files generated by this target.
-/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/build: tutorial_interfaces__py
-.PHONY : /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/build
+/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/build: tutorial_interfaces__py
+.PHONY : /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/build
 
-/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/clean:
-	cd /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py && $(CMAKE_COMMAND) -P CMakeFiles/tutorial_interfaces__py.dir/cmake_clean.cmake
-.PHONY : /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/clean
+/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/clean:
+	cd /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py && $(CMAKE_COMMAND) -P CMakeFiles/tutorial_interfaces__py.dir/cmake_clean.cmake
+.PHONY : /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/clean
 
-/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/depend:
-	cd /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/src/tutorial_interfaces /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/DependInfo.cmake "--color=$(COLOR)"
-.PHONY : /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/depend
+/home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/depend:
+	cd /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/alexroy/Documents/DAL_MAST/src/tutorial_interfaces /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/DependInfo.cmake "--color=$(COLOR)"
+.PHONY : /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py.dir/depend
 

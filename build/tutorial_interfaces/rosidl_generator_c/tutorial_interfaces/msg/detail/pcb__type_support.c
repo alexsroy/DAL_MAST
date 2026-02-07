@@ -4,9 +4,9 @@
 
 #include <string.h>
 
+#include "rosidl_typesupport_interface/macros.h"
 #include "tutorial_interfaces/msg/detail/pcb__struct.h"
 #include "tutorial_interfaces/msg/detail/pcb__type_support.h"
-#include "rosidl_typesupport_interface/macros.h"
 #include "tutorial_interfaces/msg/detail/pcb__functions.h"
 
 #ifdef __cplusplus

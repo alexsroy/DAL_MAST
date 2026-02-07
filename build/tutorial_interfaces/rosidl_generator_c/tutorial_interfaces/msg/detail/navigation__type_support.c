@@ -4,9 +4,9 @@
 
 #include <string.h>
 
-#include "tutorial_interfaces/msg/detail/navigation__type_support.h"
-#include "tutorial_interfaces/msg/detail/navigation__struct.h"
 #include "rosidl_typesupport_interface/macros.h"
+#include "tutorial_interfaces/msg/detail/navigation__struct.h"
+#include "tutorial_interfaces/msg/detail/navigation__type_support.h"
 #include "tutorial_interfaces/msg/detail/navigation__functions.h"
 
 #ifdef __cplusplus

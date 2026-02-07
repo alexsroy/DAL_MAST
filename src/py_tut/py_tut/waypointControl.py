@@ -1,13 +1,20 @@
 # 90% sure this is untested code.
 
+# change ROS
+#removefminm
 import rclpy
 import math
 from rclpy.node import Node
 
 from std_msgs.msg import String
 from std_msgs.msg import Float32
+import json
 
+
+# waht is D?
 D = 0.0005
+
+#BB = Bounding Box
 BBReverseSpace = 2
 
 def calcTriArea(A, B, C):
@@ -18,11 +25,12 @@ def pointInRect(self, point, BB): # https://stackoverflow.com/questions/17136084
     return calcTriArea(BB[0], point, BB[3]) + calcTriArea(BB[3], point, BB[2]) + calcTriArea(BB[2], point, BB[1]) + calcTriArea(BB[0], point, BB[1]) <= D * (abs(BB[0][0] - BB[3][0]) / (math.cos(math.radians(self.bearingAngle)) + 0.000000000000000001))
 
 
-class PCBReadWrite(Node):
+class waypointControl(Node):
     def __init__(self):
         super().__init__('WaypointCTRL')
 
-        self.waypointList = {}
+        # Changed waypoint list to actual list instead of dictionary
+        self.waypointList = []
 
         self.latitude = 0
         self.longitude = 0
@@ -62,14 +70,14 @@ class PCBReadWrite(Node):
 
     # Updates the WP tracker
     def waypoint_radius_callback(self):
-        nextWP = self.waypointList[(self.wpTracker + 1) % len(self.wpTracker)] # These are the waypoints we care about in order, we need 2 of them
-        currWP = self.waypointList[(self.wpTracker + 0) % len(self.wpTracker)] # in order to make a BB, so by definition, we need at least 4 WPs
-        prevWP = self.waypointList[(self.wpTracker - 1) % len(self.wpTracker)]
-        doublePrevWP = self.waypointList[(self.wpTracker - 2) % len(self.wpTracker)]
+        nextWP = self.waypointList[(self.wpTracker + 1) % len(self.waypointList)] # These are the waypoints we care about in order, we need 2 of them
+        currWP = self.waypointList[(self.wpTracker + 0) % len(self.waypointList)] # in order to make a BB, so by definition, we need at least 4 WPs
+        prevWP = self.waypointList[(self.wpTracker - 1) % len(self.waypointList)]
+        doublePrevWP = self.waypointList[(self.wpTracker - 2) % len(self.waypointList)]
 
         # If in the next BB
         if self.inBB(currWP, nextWP):
-            self.waypointTracker += 1
+            self.wpTracker += 1
 
         # If in the BB we expect
         elif self.inBB(prevWP, currWP):
@@ -77,20 +85,20 @@ class PCBReadWrite(Node):
 
         # If in the previous BB
         if self.inBB(doublePrevWP, prevWP):
-            self.waypointTracker -= 1
+            self.wpTracker -= 1
 
         # Publish the lats and lons for the WP
         f = Float32()
-        f.data(float(self.waypointList[(self.wpTracker + 0) % len(self.wpTracker)][0]))
+        f.data = float(self.waypointList[(self.wpTracker + 0) % len(self.wpTracker)][0])
         self.waypoint_longitude_publisher.publish(f)
 
-        f.data(float(self.waypointList[(self.wpTracker + 0) % len(self.wpTracker)][1]))
+        f.data = float(self.waypointList[(self.wpTracker + 0) % len(self.wpTracker)][1])
         self.waypoint_latitude_publisher.publish(f)
 
-        f.data(float(self.waypointList[(self.wpTracker - 1) % len(self.wpTracker)][0]))
+        f.data = float(self.waypointList[(self.wpTracker - 1) % len(self.wpTracker)][0])
         self.prevWaypoint_longitude_publisher.publish(f)
 
-        f.data(float(self.waypointList[(self.wpTracker - 1) % len(self.wpTracker)][1]))
+        f.data = float(self.waypointList[(self.wpTracker - 1) % len(self.wpTracker)][1])
         self.prevWaypoint_latitude_publisher.publish(f)
 
     def inBB(self, prevWP, nextWP):
@@ -104,7 +112,7 @@ class PCBReadWrite(Node):
 
         boundingBox = [APlus, AMinus, BMinus, BPlus]
 
-        return pointInRect([self.longitude, self.latitude], boundingBox)
+        return self.pointInRect((self.longitude, self.latitude), boundingBox)
 
 def main(args=None):
     # Main loop
@@ -112,18 +120,14 @@ def main(args=None):
 
     rclpy.init(args=args)
 
-    handler = SIM_ROS_HANDLER()
+    handler = waypointControl()
 
     rclpy.spin(handler)
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
     # when the garbage collector destroys the node object)
-    minimal_publisher.destroy_node()
     rclpy.shutdown()
-
-    # Quit Pygame
-    pygame.quit()
 
 
 if __name__ == '__main__':

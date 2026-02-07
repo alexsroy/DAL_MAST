@@ -1,8 +1,8 @@
-# Install script for directory: /home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/build/tutorial_interfaces/tutorial_interfaces__py
+# Install script for directory: /home/alexroy/Documents/DAL_MAST/build/tutorial_interfaces/tutorial_interfaces__py
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/install/tutorial_interfaces")
+  set(CMAKE_INSTALL_PREFIX "/home/alexroy/Documents/DAL_MAST/install/tutorial_interfaces")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 

@@ -1,13 +1,21 @@
 # 90% sure this is untested code.
 
+# change ROS
+#removefminm
 import rclpy
 import math
 from rclpy.node import Node
 
 from std_msgs.msg import String
 from std_msgs.msg import Float32
+import pygame
+import json
 
+
+# waht is D?
 D = 0.0005
+
+#BB = Bounding Box
 BBReverseSpace = 2
 
 def calcTriArea(A, B, C):
@@ -18,7 +26,7 @@ def pointInRect(self, point, BB): # https://stackoverflow.com/questions/17136084
     return calcTriArea(BB[0], point, BB[3]) + calcTriArea(BB[3], point, BB[2]) + calcTriArea(BB[2], point, BB[1]) + calcTriArea(BB[0], point, BB[1]) <= D * (abs(BB[0][0] - BB[3][0]) / (math.cos(math.radians(self.bearingAngle)) + 0.000000000000000001))
 
 
-class PCBReadWrite(Node):
+class waypointControl(Node):
     def __init__(self):
         super().__init__('WaypointCTRL')
 
@@ -112,14 +120,13 @@ def main(args=None):
 
     rclpy.init(args=args)
 
-    handler = SIM_ROS_HANDLER()
+    handler = waypointControl()
 
     rclpy.spin(handler)
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
     # when the garbage collector destroys the node object)
-    minimal_publisher.destroy_node()
     rclpy.shutdown()
 
     # Quit Pygame
