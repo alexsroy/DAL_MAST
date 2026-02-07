@@ -1,1 +1,3 @@
 src/py_tut/py_tut/.venv
+log/
+build/tutorial_interfaces/.cmake/api/v1
