@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     python3-serial \
     ros-jazzy-turtlesim \
     glpk-utils \
+    nano \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
