@@ -1,8 +1,0 @@
-{
-  "package_name": "tutorial_interfaces",
-  "non_idl_tuples": [
-    "/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/src/tutorial_interfaces:msg/PCB.msg",
-    "/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/src/tutorial_interfaces:msg/Controls.msg",
-    "/home/alexroy/Documents/DalMAST/ROS2-Luca/ros2_py_tut/src/tutorial_interfaces:msg/Navigation.msg"
-  ]
-}
