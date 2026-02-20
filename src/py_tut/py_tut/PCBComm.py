@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
+import threading
 
 
 class PCBReadWrite(Node):
@@ -23,13 +24,6 @@ class PCBReadWrite(Node):
 
     def publish_position(self):
 
-        user_input = input("Enter lat,lon (or press enter to keep current): ")
-
-        if user_input.strip() != "":
-            lat, lon = map(float, user_input.split(","))
-            self.latitude = lat
-            self.longitude = lon
-
         lat_msg = Float32()
         lon_msg = Float32()
 
@@ -49,13 +43,22 @@ class PCBReadWrite(Node):
 def main(args=None):
 
     rclpy.init(args=args)
-
     node = PCBReadWrite()
 
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
+
+
+    def input_loop():
+        while rclpy.ok():
+            user_input = input("Enter lat,lon: ")
+            if user_input.strip() != "":
+                lat, lon = map(float, user_input.split(","))
+                node.latitude = lat
+                node.longitude = lon
+
+    thread = threading.Thread(target=input_loop, daemon=True)
+    thread.start()
+
+    rclpy.spin(node)
 
     node.destroy_node()
     rclpy.shutdown()

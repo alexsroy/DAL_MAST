@@ -10,29 +10,27 @@ from std_msgs.msg import Float32
 import json
 
 
-
-GATE_WIDTH_METERS = 10
-
+#made high for testing, should be 10 for 5m tolerance
+GATE_WIDTH_METERS = 30
 
 
 class waypointControl(Node):
     def __init__(self, waypoints):
         super().__init__('waypointControl')
 
-        # Changed waypoint list to actual list instead of dictionary
         self.waypoints = waypoints  # list of (lat, lon)
+        #if there are waypoints set, then create the waypoints from the starting waypoint
         if len(self.waypoints) > 0:
             self.origin = self.waypoints[0]
             self.meter_waypoints = [
                 self._latlon_to_xy(wp) for wp in self.waypoints
             ]
-            
-        self.origin = None
+
         self.race_started = False
 
+        #The current leg is the waypoint you are sailing to (0 = going to the start mark)
         self.current_leg = 0
 
-        # This is
         self.max_laps = 1
         self.lap_count = 0
 
@@ -61,7 +59,8 @@ class waypointControl(Node):
         self.bearingAngle = 0
         print("yooooooo")
 
-
+    #recieve a String with JSON, convert it to a dictionary
+    #allows you to add a waypoint
     def command_callback(self, msg):
         DICT = json.loads(msg.data)
 
@@ -166,13 +165,14 @@ class waypointControl(Node):
     # -------------------------
 
     def update(self, boat_pos):
-        print('in update function')
+        
         print(f'here is the latitude, longitude {self.latitude}, {self.longitude}')
         print(f'boat pos: {boat_pos}')
         if self.race_complete or len(self.waypoints) == 0:
             return False
 
         inside, distance = self.point_in_gate(boat_pos)
+        print(f"Leg {self.current_leg} | Distance: {distance:.2f} m | Inside: {inside}")
 
         if inside and not self._was_inside_gate:
 
