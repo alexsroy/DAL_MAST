@@ -72,7 +72,7 @@ class navigationNode(Node):
         #self.target_heading_pub_callback()
         #self.bearing_to_waypoint_callback()
 
-        #self.navigationTimer = self.create_timer(0.1, self.bounding_box_checker_callback)
+        self.navigationTimer = self.create_timer(0.1, self.bearing_to_waypoint_callback)
 
 
     def longitude_callback(self, msg):
@@ -154,14 +154,14 @@ class navigationNode(Node):
                 }
 
                 # Take the template, and replace our special characters with the values stored in the dict above
-                template = Path('NEED TO FIGURE OUT HOW TO SET THE PATH HERE').read_text()
+                template = Path('/workspace/src/py_tut/py_tut/navigationTemplate.mod').read_text()
                 for character in replacements:
                     template = template.replace(character, str(replacements[character]))
 
                 # Write to a .mod file and then run using GLPK, and output result to output.txt
                 with open("temp.mod", "w") as text_file:
                     text_file.write(template)
-                os.system('glpsol --math temp.mod > output.txt') # TODO:confirm behaviour of > and >> on rPI
+                os.system('glpsol --math temp.mod > output.txt') # Removed comment that Andrew found scary, it's just bash
 
 
                 # Once operating system returns value, read output file to a variable
@@ -228,6 +228,8 @@ class navigationNode(Node):
             self.headingTarget = BBReturnHeading
 
         # Finally make sure to publish the target heading lolololol
+        f = Float32()
+        print(type(f.data), "    tt    ", type(self.headingTarget))
         f.data = float(self.headingTarget)
         self.targetHeading_publisher.publish(f)
 
