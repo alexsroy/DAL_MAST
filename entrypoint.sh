@@ -8,7 +8,7 @@ if [ ! -f "/workspace/install/setup.bash" ]; then
     echo "building workspace..."
     colcon build
 else
-    echo "colcon build files already found, skipping build."
+    echo "colcon build files already found, skipping pre-emptive build."
 fi
 
 source "/workspace/install/setup.bash"
