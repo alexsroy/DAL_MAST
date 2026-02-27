@@ -10,8 +10,8 @@ class PCBReadWrite(Node):
         super().__init__('PCBComm')
 
         # Boat state
-        self.latitude = 44.616314
-        self.longitude = -63.549043
+        self.latitude = 44.696314
+        self.longitude = -63.619043
 
         # Publishers
         self.latitude_publisher = self.create_publisher(Float32, 'latitude', 10)

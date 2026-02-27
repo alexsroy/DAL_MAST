@@ -11,7 +11,7 @@ import json
 
 
 #made high for testing, should be 10 for 5m tolerance
-GATE_WIDTH_METERS = 30
+GATE_WIDTH_METERS = 10
 
 
 class waypointControl(Node):
@@ -25,6 +25,9 @@ class waypointControl(Node):
             self.meter_waypoints = [
                 self._latlon_to_xy(wp) for wp in self.waypoints
             ]
+        else:
+            self.origin = None
+            self.meter_waypoints = []
 
         self.race_started = False
 
@@ -160,14 +163,10 @@ class waypointControl(Node):
 
         return inside, distance
 
-    # -------------------------
-    # Update race state
-    # -------------------------
 
+    # Update race state
     def update(self, boat_pos):
-        
-        print(f'here is the latitude, longitude {self.latitude}, {self.longitude}')
-        print(f'boat pos: {boat_pos}')
+
         if self.race_complete or len(self.waypoints) == 0:
             return False
 
@@ -175,19 +174,36 @@ class waypointControl(Node):
         print(f"Leg {self.current_leg} | Distance: {distance:.2f} m | Inside: {inside}")
 
         if inside and not self._was_inside_gate:
+            # PRE-START
+            if not self.race_started and self.current_leg == 0:
 
-            if not self.race_started:
-                self._advance_leg()
                 self.race_started = True
-                print('race started')
+                self._advance_leg()
+                print("Race started")
 
+            # NORMAL RACING
             else:
+
+                # If we ENTER waypoint 0 during racing,
+                # that means we finished a lap.
+                if self.race_started and self.current_leg == 0:
+
+                    self.lap_count += 1
+                    print(f"Lap {self.lap_count} complete")
+
+                    if self.max_laps is not None and self.lap_count >= self.max_laps:
+                        self.race_complete = True
+                        print("Race complete")
+                        self._was_inside_gate = True
+                        return True
+
                 self._advance_leg()
                 print(f"Advanced to leg {self.current_leg}")
 
             self._was_inside_gate = True
             return True
 
+        # Reset once outside gate
         if not inside:
             self._was_inside_gate = False
 
@@ -196,20 +212,9 @@ class waypointControl(Node):
 
     def _advance_leg(self):
         self.current_leg += 1
-
         if self.current_leg >= len(self.waypoints):
             self.current_leg = 0
-            self.lap_count += 1
 
-            print(f"Lap {self.lap_count} complete")
-
-            if self.max_laps is not None and self.lap_count >= self.max_laps:
-                self.race_complete = True
-                print("Race complete")
-
-    # -------------------------
-    # Info helpers
-    # -------------------------
 
     def current_leg_info(self, boat_pos=None):
         if self.race_complete:
@@ -255,9 +260,6 @@ def main(args=None):
 
     rclpy.spin(handler)
 
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
     rclpy.shutdown()
 
 
