@@ -48,42 +48,70 @@ class PCBReadWrite(Node):
         
     #Pretend PCBComm that is actually just reading from the command line
     def read_PCB(self):
-            #this is a pretend string from PCBComm (it will actually be read over serial connection)
-            lamePCBstr = input("Enter the command").strip()
+        lamePCBstr = input("Enter the command").strip()
+
+        try:
             DICT = json.loads(lamePCBstr)
+        except json.JSONDecodeError:
+            print("Invalid JSON")
+            return
 
-            if "WaypointCommand" in DICT:
-                wp_cmd_block = DICT["WaypointCommand"]
+        if "WaypointCommand" not in DICT:
+            print("No WaypointCommand found")
+            return
 
-                # There will only be one key inside
-                command_type = list(wp_cmd_block.keys())[0]
-                payload = wp_cmd_block[command_type]
+        wp_cmd_block = DICT["WaypointCommand"]
 
-                outgoing = {}
-                if command_type == "add":
-                    wp = payload[0]
-                    outgoing = {
-                        "cmd": "add",
-                        "order": wp["order"],
-                        "latitude": wp["latitude"],
-                        "longitude": wp["longitude"]
-                    }
-                elif command_type == "remove":
-                    wp = payload[0]
-                    outgoing = {
-                        "cmd": "remove",
-                        "order": wp["order"]
-                    }
-                elif command_type == "startFollowing":
-                    outgoing = {"cmd": "startFollowing"}
+        command_type = list(wp_cmd_block.keys())[0]
+        payload = wp_cmd_block[command_type]
 
-                elif command_type == "stopFollowing":
-                    outgoing = {"cmd": "stopFollowing"}
+        outgoing = {}
 
-                msg = String()
-                msg.data = json.dumps(outgoing)
+        if command_type == "add":
+            if len(payload) == 0:
+                print("Add command missing waypoint data")
+                return
 
-                self.waypointCmd_publisher.publish(msg)
+            wp = payload[0]
+
+            # Order is optional
+            outgoing = {
+                "cmd": "add",
+                "latitude": wp["latitude"],
+                "longitude": wp["longitude"]
+            }
+
+            if "order" in wp:
+                outgoing["order"] = wp["order"]
+
+        elif command_type == "remove":
+            if len(payload) == 0:
+                print("Remove command missing data")
+                return
+
+            wp = payload[0]
+
+            outgoing = {
+                "cmd": "remove"
+            }
+
+            # Order optional
+            if "order" in wp:
+                outgoing["order"] = wp["order"]
+
+        elif command_type == "startFollowing":
+            outgoing = {"cmd": "startFollowing"}
+
+        elif command_type == "stopFollowing":
+            outgoing = {"cmd": "stopFollowing"}
+
+        else:
+            print("Unknown command")
+            return
+
+        msg = String()
+        msg.data = json.dumps(outgoing)
+        self.waypointCmd_publisher.publish(msg)
 
 
 
@@ -96,9 +124,9 @@ def main(args=None):
 
     def input_loop():
         while rclpy.ok():
-            coord_or_command = input("Enter 1 for lat, lon, 2 for command")
+            coord_or_command = input("Enter 1 for lat, lon, 2 for command ")
             if coord_or_command == "1":        
-                user_input = input("Enter lat,lon: ")
+                user_input = input("Enter lat,lon: \n")
                 if user_input.strip() != "":
                     lat, lon = map(float, user_input.split(","))
                     node.latitude = lat

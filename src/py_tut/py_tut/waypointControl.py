@@ -27,19 +27,19 @@ class waypointControl(Node):
         else:
             self.origin = None
             self.meter_waypoints = []
-
-        self.race_started = False
-
-        #The current leg is the waypoint you are sailing to (0 = going to the start mark)
-        self.current_leg = 0
-
-        self.max_laps = 1
-        self.lap_count = 0
-
+        
+        self.gate_width = GATE_WIDTH_METERS
         self.latitude = 0
         self.longitude = 0
         self.wpTracker = 0
-        self.gate_width = GATE_WIDTH_METERS
+        
+        
+        #The current leg is the waypoint you are sailing to (0 = going to the start mark)
+        self.max_laps = 1
+        self.current_leg = 0
+        self.lap_count = 0
+        self.following_enabled = False
+        self.race_started = False
         self.race_complete = False
         self._was_inside_gate = False
         
@@ -65,17 +65,18 @@ class waypointControl(Node):
     #allows you to add a waypoint
     def command_callback(self, msg):
         DICT = json.loads(msg.data)
-
-        cmd = DICT["cmd"]
+        cmd = DICT.get("cmd")
 
         if cmd == "add":
             lat = DICT["latitude"]
             lon = DICT["longitude"]
-            index = int(DICT["order"])
-            if index == None:
-                self.waypoints.append((lat, lon))
+
+            order = DICT.get("order")
+
+            if isinstance(order, int) and 0 <= order <= len(self.waypoints):
+                self.waypoints.insert(order, (lat, lon))
             else:
-                self.waypoints.insert(index, ((lat, lon)))
+                self.waypoints.append((lat, lon))
 
             if self.origin is None:
                 self.origin = (lat, lon)
@@ -87,23 +88,41 @@ class waypointControl(Node):
             print(f"Waypoint added: {lat}, {lon}")
 
         elif cmd == "remove":
-            order = DICT["order"]
+            if not self.waypoints:
+                print("No waypoints to remove.")
+                return
 
-            if 0 <= order < len(self.waypoints):
+            order = DICT.get("order")
+
+            if isinstance(order, int) and 0 <= order < len(self.waypoints):
                 removed = self.waypoints.pop(order)
-                print(f"Removed waypoint: {removed}")
+            else:
+                # Default behavior: remove last waypoint
+                removed = self.waypoints.pop()
 
-                self.meter_waypoints = [
-                    self._latlon_to_xy(wp) for wp in self.waypoints
-                ]
+            print(f"Removed waypoint: {removed}")
+
+            self.meter_waypoints = [
+                self._latlon_to_xy(wp) for wp in self.waypoints
+            ]
 
         elif cmd == "startFollowing":
-            self.race_started = True
-            print("Following started")
+            if not self.waypoints:
+                print("No waypoints to follow.")
+                return
+
+            self.following_enabled = True
+            self.current_leg = 0
+            self.lap_count = 0
+            self.race_started = False
+            self.race_complete = False
+            self._was_inside_gate = False
+
+            print("Following enabled")
 
         elif cmd == "stopFollowing":
-            self.race_started = False
-            print("Following stopped")
+            self.following_enabled = False
+            print("Following disabled")
     
 
     def longitude_callback(self, msg):
@@ -114,6 +133,8 @@ class waypointControl(Node):
 
     # Updates the WP tracker
     def waypoint_radius_callback(self):
+        if not self.following_enabled:
+            return
 
         if len(self.waypoints) == 0:
             return
