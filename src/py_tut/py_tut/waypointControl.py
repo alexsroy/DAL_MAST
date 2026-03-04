@@ -10,7 +10,6 @@ from std_msgs.msg import Float32
 import json
 
 
-#made high for testing, should be 10 for 5m tolerance
 GATE_WIDTH_METERS = 10
 
 
@@ -56,7 +55,7 @@ class waypointControl(Node):
         self.longitude_subscription = self.create_subscription(Float32, 'longitude', self.longitude_callback, 10)
         self.latitude_subscription = self.create_subscription(Float32, 'latitude', self.latitude_callback, 10)
 
-        self.waypointCMD_subscriber = self.create_subscription(String, 'waypoint_command', self.command_callback, 10)
+        self.waypointCmd_subscriber = self.create_subscription(String, 'waypoint_command', self.command_callback, 10)
         self.navigationTimer = self.create_timer(1.0, self.waypoint_radius_callback)
 
         self.bearingAngle = 0
@@ -67,11 +66,16 @@ class waypointControl(Node):
     def command_callback(self, msg):
         DICT = json.loads(msg.data)
 
-        if DICT["WPcmd"] == "add":
+        cmd = DICT["cmd"]
+
+        if cmd == "add":
             lat = DICT["latitude"]
             lon = DICT["longitude"]
-
-            self.waypoints.append((lat, lon))
+            index = int(DICT["order"])
+            if index == None:
+                self.waypoints.append((lat, lon))
+            else:
+                self.waypoints.insert(index, ((lat, lon)))
 
             if self.origin is None:
                 self.origin = (lat, lon)
@@ -82,12 +86,25 @@ class waypointControl(Node):
 
             print(f"Waypoint added: {lat}, {lon}")
 
-        elif DICT["WPcmd"] == "clear":
-            self.waypoints = []
-            self.meter_waypoints = []
-            self.origin = None
-            self.current_leg = 0
+        elif cmd == "remove":
+            order = DICT["order"]
+
+            if 0 <= order < len(self.waypoints):
+                removed = self.waypoints.pop(order)
+                print(f"Removed waypoint: {removed}")
+
+                self.meter_waypoints = [
+                    self._latlon_to_xy(wp) for wp in self.waypoints
+                ]
+
+        elif cmd == "startFollowing":
+            self.race_started = True
+            print("Following started")
+
+        elif cmd == "stopFollowing":
             self.race_started = False
+            print("Following stopped")
+    
 
     def longitude_callback(self, msg):
         self.longitude = msg.data
@@ -172,6 +189,8 @@ class waypointControl(Node):
 
         inside, distance = self.point_in_gate(boat_pos)
         print(f"Leg {self.current_leg} | Distance: {distance:.2f} m | Inside: {inside}")
+        print("Waypoints")
+        print(self.waypoints)
 
         if inside and not self._was_inside_gate:
             # PRE-START
@@ -250,7 +269,7 @@ def main(args=None):
     D = (44.615673, -63.557152)
 
 
-    waypoints = [A, B, C, D]
+    waypoints = []
 
     rclpy.init(args=args)
 
