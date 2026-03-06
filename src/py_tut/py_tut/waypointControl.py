@@ -56,13 +56,11 @@ class waypointControl(Node):
         self.latitude_subscription = self.create_subscription(Float32, 'latitude', self.latitude_callback, 10)
 
         self.waypointCmd_subscriber = self.create_subscription(String, 'waypoint_command', self.command_callback, 10)
-        self.navigationTimer = self.create_timer(1.0, self.waypoint_radius_callback)
+        self.navigationTimer = self.create_timer(0.1, self.waypoint_radius_callback)
 
         self.bearingAngle = 0
-        print("yooooooo")
 
     #recieve a String with JSON, convert it to a dictionary
-    #allows you to add a waypoint
     def command_callback(self, msg):
         DICT = json.loads(msg.data)
         cmd = DICT.get("cmd")
@@ -216,7 +214,6 @@ class waypointControl(Node):
         if inside and not self._was_inside_gate:
             # PRE-START
             if not self.race_started and self.current_leg == 0:
-
                 self.race_started = True
                 self._advance_leg()
                 print("Race started")
@@ -283,7 +280,7 @@ class waypointControl(Node):
 def main(args=None):
     # Main loop
 
-    #racecourse
+    #Test racecourse
     A = (44.616314, -63.549043)
     B = (44.619957, -63.548778)
     C = (44.619894, -63.557008)
