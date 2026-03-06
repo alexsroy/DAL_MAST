@@ -20,7 +20,7 @@ def pointInRect(self, point, BB): # https://stackoverflow.com/questions/17136084
 
 class PCBReadWrite(Node):
     def __init__(self):
-        super().__init__('WaypointCTRL')
+        super().__init__('waypointControl')
 
         self.waypointList = {}
 

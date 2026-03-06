@@ -27,7 +27,7 @@ setup(
     entry_points={
         'console_scripts': [
                 'comm = py_tut.PCBComm:main',
-                'wayp = py_tut.WaypointCTRL:main',
+                'wayp = py_tut.waypointControl:main',
                 'boat = py_tut.boatClasses:main',
                 'ctrl = py_tut.controls:main',
                 'navi = py_tut.navigation:main'
