@@ -22,7 +22,7 @@ setup(
     maintainer='dalmast',
     maintainer_email='dalmast@dal.ca',
     description='TODO: Package description',
-    license='Apache-2.0',
+    license='CC0 1.0 Universal',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
@@ -31,7 +31,6 @@ setup(
                 'boat = py_tut.boatClasses:main',
                 'ctrl = py_tut.controls:main',
                 'navi = py_tut.navigation:main'
-
         ],
     },
 )
