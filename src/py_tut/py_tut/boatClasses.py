@@ -15,6 +15,11 @@ import math
 import time
 import random as rnd
 
+import os
+from ament_index_python.packages import get_package_share_directory
+
+
+
 # If enabled, can control the sailboat with the keyboard
 KEYBOARD_CONTROLS = True
 NAV_ALGORITHM = True
@@ -24,12 +29,23 @@ WAYPOINT_HUD_ENABLE = False
 PUBLISH_VALUES = False
 RUN_PHYSICS = True
 
+# use share dir to get assets
+pkg_share_dir = get_package_share_directory('py_tut')
+images_dir = os.path.join(pkg_share_dir, 'assets')
+
+# get image paths
+ocean_path = os.path.join(images_dir, 'ocean.jpg')
+wind_path = os.path.join(images_dir, 'arrow.png')
+hull_path = os.path.join(images_dir, 'hull.png')
+sail_path = os.path.join(images_dir, 'sail.png')
+flap_path = os.path.join(images_dir, 'flap.png')
+
 # Load image files
-oceanTile = pygame.image.load('ocean.jpg')
-windVane = pygame.image.load('arrow.png')
-hullImg = pygame.image.load("hull.png")
-sailImg = pygame.image.load("sail.png")
-flapImg = pygame.image.load("flap.png")
+oceanTile = pygame.image.load(ocean_path)
+windVane = pygame.image.load(wind_path)
+hullImg = pygame.image.load(hull_path)
+sailImg = pygame.image.load(sail_path)
+flapImg = pygame.image.load(flap_path)
 
 # These are variables used for scaling
 # Below has units of pixels
