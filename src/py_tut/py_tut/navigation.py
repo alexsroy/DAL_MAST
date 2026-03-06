@@ -3,6 +3,9 @@ import sys
 import time
 import os
 
+# for resolving file paths in ros2
+from ament_index_python.packages import get_package_share_directory
+
 import rclpy
 from rclpy.node import Node
 import math
@@ -153,8 +156,12 @@ class navigationNode(Node):
                     "%" : vector2[1]
                 }
 
+                # getting the nav template path properly for ros2
+                package_share_directory = get_package_share_directory('py_tut')
+                nav_template_path = os.path.join(package_share_directory, 'navigationTemplate.mod')
+
                 # Take the template, and replace our special characters with the values stored in the dict above
-                template = Path('/workspace/src/py_tut/py_tut/navigationTemplate.mod').read_text()
+                template = Path(nav_template_path).read_text()
                 for character in replacements:
                     template = template.replace(character, str(replacements[character]))
 

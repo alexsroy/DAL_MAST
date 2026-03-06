@@ -22,11 +22,11 @@ WAYPOINT_HUD_ENABLE = True
 RUN_PHYSICS = True
 
 # Load image files
-oceanTile = pygame.image.load('ocean.jpg')
-windVane = pygame.image.load('arrow.png')
-hullImg = pygame.image.load("hull.png")
-sailImg = pygame.image.load("sail.png")
-flapImg = pygame.image.load("flap.png")
+oceanTile = pygame.image.load('./assets/ocean.jpg')
+windVane = pygame.image.load('./assets/arrow.png')
+hullImg = pygame.image.load("./assets/hull.png")
+sailImg = pygame.image.load("./assets/sail.png")
+flapImg = pygame.image.load("./assets/flap.png")
 
 # These are variables used for scaling
 # Below has units of pixels

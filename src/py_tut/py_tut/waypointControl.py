@@ -19,18 +19,8 @@ class waypointControl(Node):
     def __init__(self, waypoints):
         super().__init__('waypointControl')
 
-        self.waypoints = waypoints  # list of (lat, lon)
-        #if there are waypoints set, then create the waypoints from the starting waypoint
-        if len(self.waypoints) > 0:
-            self.origin = self.waypoints[0]
-            self.meter_waypoints = [
-                self._latlon_to_xy(wp) for wp in self.waypoints
-            ]
-        else:
-            self.origin = None
-            self.meter_waypoints = []
-        
-        self.gate_width = GATE_WIDTH_METERS
+        self.waypointList = []
+
         self.latitude = 0
         self.longitude = 0
         self.wpTracker = 0
