@@ -45,8 +45,8 @@ class PCBReadWrite(Node):
         self.targetHeading_subscriber = self.create_subscription(Float32, 'heading_target_direction', self.target_heading_callback, 10)
         self.waypoint_longitude_subscription = self.create_subscription(Float32, 'waypoint_longitude', self.waypoint_longitude_callback, 10)
         self.waypoint_latitude_subscription = self.create_subscription(Float32, 'waypoint_latitude', self.waypoint_latitude_callback, 10)
-        #self.intermediate_waypoint_longitude_subscription = self.create_subscription(Float32, 'intermediate_waypoint_longitude', self.inter_waypoint_longitude_callback, 10)
-        #self.intermediate_waypoint_latitude_subscription = self.create_subscription(Float32, 'intermediate_waypoint_latitude', self.inter_waypoint_latitude_callback, 10)
+        self.prevWaypoint_longitude_subscription = self.create_subscription(Float32, 'previous_waypoint_longitude', self.prevWaypoint_longitude_callback, 10)
+        self.prevWaypoint_latitude_subscription = self.create_subscription(Float32, 'previous_waypoint_latitude', self.prevWaypoint_latitude_callback, 10)
 
         # These are publishers that are sensor data from the PCB
         self.windVane_publisher = self.create_publisher(Float32, 'wind_direction', 10)
@@ -104,10 +104,63 @@ class PCBReadWrite(Node):
                 f.data = float(DICT["latitude"])
                 self.latitude_publisher.publish(f)
 
-            if "WPCmd" in DICT.keys():
-                s = String()
-                s.data = self.PCBStr
-                self.waypointCmd_publisher.publish(s)
+            if "WaypointCommand" not in DICT:
+                print("No WaypointCommand found")
+                return
+
+            wp_cmd_block = DICT["WaypointCommand"]
+
+            command_type = list(wp_cmd_block.keys())[0]
+            payload = wp_cmd_block[command_type]
+
+            outgoing = {}
+
+            if command_type == "add":
+                if len(payload) == 0:
+                    print("Add command missing waypoint data")
+                    return
+
+                wp = payload[0]
+
+                # Order is optional
+                outgoing = {
+                    "cmd": "add",
+                    "latitude": wp["latitude"],
+                    "longitude": wp["longitude"]
+                }
+
+                if "order" in wp:
+                    outgoing["order"] = wp["order"]
+                
+
+            elif command_type == "remove":
+                if len(payload) == 0:
+                    print("Remove command missing data")
+                    return
+
+                wp = payload[0]
+
+                outgoing = {
+                    "cmd": "remove"
+                }
+
+                # Order optional
+                if "order" in wp:
+                    outgoing["order"] = wp["order"]
+
+            elif command_type == "startFollowing":
+                outgoing = {"cmd": "startFollowing"}
+
+            elif command_type == "stopFollowing":
+                outgoing = {"cmd": "stopFollowing"}
+
+            else:
+                print("Unknown command")
+                return
+
+            msg = String()
+            msg.data = json.dumps(outgoing)
+            self.waypointCmd_publisher.publish(msg)
 
     # Update the motors when we hear something from other ROS nodes
     def sail_target_callback(self, msg):
