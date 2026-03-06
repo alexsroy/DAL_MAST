@@ -1,6 +1,8 @@
+# waypointControl Class Written by: Alex Roy
+# Used to create the racecourse by passing commands through PCBComm,
+# update the objective waypoint when you reach the end of the current leg,
+# and tracking the start / end of the race
 
-# change ROS
-#removefminm
 import rclpy
 import math
 from rclpy.node import Node
