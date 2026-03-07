@@ -22,7 +22,7 @@ setup(
     maintainer='dalmast',
     maintainer_email='dalmast@dal.ca',
     description='TODO: Package description',
-    license='CC0 1.0 Universal',
+    license='Apache 2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
