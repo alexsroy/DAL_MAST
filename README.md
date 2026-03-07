@@ -53,3 +53,6 @@ The accessible module names currently are as follows:
 - ctrl
 - comm
 - wayp
+
+> [!TIP]
+> To easily launch all of the modules at the same time, navigate to the root of the project and run the `launch.sh` file.
