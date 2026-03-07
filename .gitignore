@@ -2,3 +2,5 @@ src/py_tut/py_tut/.venv
 build
 log
 install
+temp.mod
+output.txt
