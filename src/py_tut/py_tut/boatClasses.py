@@ -20,7 +20,7 @@ KEYBOARD_CONTROLS = True
 NAV_ALGORITHM = True
 CREATE_POLAR_PLOT = False
 DRAW_THRUST_VECTOR = False
-WAYPOINT_HUD_ENABLE = False
+WAYPOINT_HUD_ENABLE = True
 PUBLISH_VALUES = False
 RUN_PHYSICS = True
 
@@ -69,8 +69,12 @@ class waypoint:
         self.y = y
         self.rad = radius
 
-wp = waypoint(3500, 2000, 200)
+wp1 = waypoint(3500, 2000, 200)
+wp2 = waypoint(5500, 2000, 200)
+wp3 = waypoint(2000, 3500, 200)
+wp4 = waypoint(3500, 3500, 200)
 
+waypoints = [wp1, wp2, wp3, wp4]
 
 
 class boat:
@@ -321,6 +325,13 @@ def renderBackground(boatX, boatY):
     # Render the waypoint in the ocean
     waypointSurf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
     pygame.draw.circle(waypointSurf, (128, 0, 0), (wp.x - nautono.x + SCREEN_WIDTH // 2, wp.y - nautono.y + SCREEN_HEIGHT // 2), wp.rad)
+    
+
+    #nautono x is where the boat is?
+    for wayp in waypoints:
+        pygame.draw.circle(waypointSurf, (128, 0, 0), (wayp.x - nautono.x + SCREEN_WIDTH // 2, wayp.y - nautono.y + SCREEN_HEIGHT // 2), wayp.rad)
+
+
     screen.blit(waypointSurf, (0, 0))
 
 # This function is from: https://stackoverflow.com/questions/4183208/how-do-i-rotate-an-image-around-its-center-using-pygame
@@ -494,6 +505,14 @@ class SIM_ROS_HANDLER(Node):
         self.longitude_publisher = self.create_publisher(Float32, 'longitude', 10)
         self.waypoint_latitude_publisher = self.create_publisher(Float32, 'waypoint_latitude', 10)
         self.waypoint_longitude_publisher = self.create_publisher(Float32, 'waypoint_longitude', 10)
+
+
+        #Next waypoint coords
+        self.waypoint_latitude_subscription = self.create_subscription(Float32, 'waypoint_latitude', 10)
+        self.waypoint_longitude_subscription = self.create_subscription(Float32, 'waypoint_longitude', 10)
+        #Previous waypoint coords
+        self.prevWaypoint_latitude_subscription = self.create_subscription(Float32, 'previous_waypoint_latitude', 10)
+        self.prevWaypoint_longitude_subscription = self.create_subscription(Float32, 'previous_waypoint_longitude', 10)
 
         self.sailAngle_publisher = self.create_publisher(Float32, 'sail_angle', 10)
         self.flapAngle_publisher = self.create_publisher(Float32, 'flap_angle', 10)

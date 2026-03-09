@@ -1,4 +1,4 @@
-build/
+build
 src/py_tut/py_tut/.venv
 log/
 

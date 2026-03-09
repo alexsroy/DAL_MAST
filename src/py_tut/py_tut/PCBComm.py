@@ -50,68 +50,13 @@ class PCBReadWrite(Node):
     def read_PCB(self):
         lamePCBstr = input("Enter the command").strip()
 
-        try:
-            DICT = json.loads(lamePCBstr)
-        except json.JSONDecodeError:
-            print("Invalid JSON")
-            return
-
-        if "WaypointCommand" not in DICT:
-            print("No WaypointCommand found")
-            return
-
-        wp_cmd_block = DICT["WaypointCommand"]
-
-        command_type = list(wp_cmd_block.keys())[0]
-        payload = wp_cmd_block[command_type]
-
-        outgoing = {}
-
-        if command_type == "add":
-            if len(payload) == 0:
-                print("Add command missing waypoint data")
-                return
-
-            wp = payload[0]
-
-            # Order is optional
-            outgoing = {
-                "cmd": "add",
-                "latitude": wp["latitude"],
-                "longitude": wp["longitude"]
-            }
-
-            if "order" in wp:
-                outgoing["order"] = wp["order"]
-
-        elif command_type == "remove":
-            if len(payload) == 0:
-                print("Remove command missing data")
-                return
-
-            wp = payload[0]
-
-            outgoing = {
-                "cmd": "remove"
-            }
-
-            # Order optional
-            if "order" in wp:
-                outgoing["order"] = wp["order"]
-
-        elif command_type == "startFollowing":
-            outgoing = {"cmd": "startFollowing"}
-
-        elif command_type == "stopFollowing":
-            outgoing = {"cmd": "stopFollowing"}
-
-        else:
-            print("Unknown command")
-            return
-
-        msg = String()
-        msg.data = json.dumps(outgoing)
-        self.waypointCmd_publisher.publish(msg)
+        waypoint_commands = ["add", "remove", "startFollowing", "stopFollowing", "setCurrentWaypoint"]
+        if any(cmd in lamePCBstr for cmd in waypoint_commands):
+            json_str = "{" + lamePCBstr + "}"
+            msg = String()
+            msg.data = json_str
+            self.waypointCmd_publisher.publish(msg)
+            
 
 
 
