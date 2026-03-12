@@ -9,6 +9,7 @@ from rclpy.node import Node
 
 from std_msgs.msg import String
 from std_msgs.msg import Float32
+from std_msgs.msg import Bool
 import json
 
 
@@ -19,8 +20,18 @@ class waypointControl(Node):
     def __init__(self, waypoints):
         super().__init__('waypointControl')
 
-        self.waypointList = []
-
+        self.waypoints = waypoints  # list of (lat, lon)
+        #if there are waypoints set, then create the waypoints from the starting waypoint
+        if len(self.waypoints) > 0:
+            self.origin = self.waypoints[0]
+            self.meter_waypoints = [
+                self._latlon_to_xy(wp) for wp in self.waypoints
+            ]
+        else:
+            self.origin = None
+            self.meter_waypoints = []
+        
+        self.gate_width = GATE_WIDTH_METERS
         self.latitude = 0
         self.longitude = 0
         self.wpTracker = 0
@@ -49,19 +60,35 @@ class waypointControl(Node):
 
         self.waypointCmd_subscriber = self.create_subscription(String, 'waypoint_command', self.command_callback, 10)
         self.navigationTimer = self.create_timer(0.1, self.waypoint_radius_callback)
+        
+        # Following waypoint command
+        self.following_enabled_publisher = self.create_publisher(Bool, 'following', 10)
 
         self.bearingAngle = 0
 
+
     #recieve a String with JSON, convert it to a dictionary
     def command_callback(self, msg):
-        DICT = json.loads(msg.data)
-        cmd = DICT.get("cmd")
+
+        try:
+            DICT = json.loads(msg.data)
+        except json.JSONDecodeError:
+            print("Invalid waypoint command JSON")
+            return
+        print('this is the DICT')
+        print(DICT)
+        cmd = next(iter(DICT))          # get command name
+        payload = DICT[cmd]
+
+        if not isinstance(payload, list) or len(payload) == 0:
+            payload = [{}]
+
+        data = payload[0]
 
         if cmd == "add":
-            lat = DICT["latitude"]
-            lon = DICT["longitude"]
-
-            order = DICT.get("order")
+            lat = data["latitude"]
+            lon = data["longitude"]
+            order = data.get("order")
 
             if isinstance(order, int) and 0 <= order <= len(self.waypoints):
                 self.waypoints.insert(order, (lat, lon))
@@ -77,42 +104,68 @@ class waypointControl(Node):
 
             print(f"Waypoint added: {lat}, {lon}")
 
+
         elif cmd == "remove":
+
             if not self.waypoints:
-                print("No waypoints to remove.")
+                print("No waypoints to remove")
                 return
 
-            order = DICT.get("order")
+            order = data.get("order")
 
             if isinstance(order, int) and 0 <= order < len(self.waypoints):
                 removed = self.waypoints.pop(order)
             else:
-                # Default behavior: remove last waypoint
                 removed = self.waypoints.pop()
 
             print(f"Removed waypoint: {removed}")
+            if self.waypoints:
+                self.current_leg = min(self.current_leg, len(self.waypoints) - 1)
+            else:
+                self.current_leg = 0
 
             self.meter_waypoints = [
                 self._latlon_to_xy(wp) for wp in self.waypoints
             ]
+            
+
 
         elif cmd == "startFollowing":
-            if not self.waypoints:
-                print("No waypoints to follow.")
-                return
 
+            if not self.waypoints:
+                print("No waypoints to follow")
+                return
+            
             self.following_enabled = True
-            self.current_leg = 0
             self.lap_count = 0
             self.race_started = False
             self.race_complete = False
             self._was_inside_gate = False
-
+            msg = Bool()
+            msg.data = True
+            self.following_enabled_publisher.publish(msg)
             print("Following enabled")
+
 
         elif cmd == "stopFollowing":
             self.following_enabled = False
+            msg = Bool()
+            msg.data = True
+            self.following_enabled_publisher.publish(msg)
             print("Following disabled")
+        
+        elif cmd == "setCurrentWaypoint":
+            order = data.get("order")
+
+            if isinstance(order, int) and 0 <= order < len(self.waypoints):
+                self.current_leg = order
+                self._was_inside_gate = False  # reset gate tracking
+                print(f"Current waypoint manually set to {self.current_leg}")
+            else:
+                print(f"Invalid waypoint index: {order}")
+
+        else:
+            print(f"Unknown waypoint command: {cmd}")
     
 
     def longitude_callback(self, msg):
@@ -212,7 +265,6 @@ class waypointControl(Node):
 
             # NORMAL RACING
             else:
-
                 # If we ENTER waypoint 0 during racing,
                 # that means we finished a lap.
                 if self.race_started and self.current_leg == 0:

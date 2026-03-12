@@ -14,6 +14,7 @@ class PCBReadWrite(Node):
 
         self.PCBStr = ""
 
+        #COMMENT OUT these lines to run without the pcb
         self.ser = serial.Serial("/dev/ttyS0", 115200, timeout = 0.1)
         self.ser.reset_input_buffer()
 
@@ -21,8 +22,8 @@ class PCBReadWrite(Node):
         self.targetBearing = 0.0                # These are floats to be published for informative value
         self.waypointLat = 0.0
         self.waypointLon = 0.0
-        #self.intWaypointLat = 0.0
-        #self.intWaypointLat = 0.0
+        self.prevWaypointLat = 0.0
+        self.prevWaypointLon = 0.0
 
         # These are control surfaces the PCB needs to react to
         self.targetSailAngle = 0.0        # (0, 360)
@@ -45,8 +46,8 @@ class PCBReadWrite(Node):
         self.targetHeading_subscriber = self.create_subscription(Float32, 'heading_target_direction', self.target_heading_callback, 10)
         self.waypoint_longitude_subscription = self.create_subscription(Float32, 'waypoint_longitude', self.waypoint_longitude_callback, 10)
         self.waypoint_latitude_subscription = self.create_subscription(Float32, 'waypoint_latitude', self.waypoint_latitude_callback, 10)
-        self.prevWaypoint_longitude_subscription = self.create_subscription(Float32, 'previous_waypoint_longitude', self.prevWaypoint_longitude_callback, 10)
-        self.prevWaypoint_latitude_subscription = self.create_subscription(Float32, 'previous_waypoint_latitude', self.prevWaypoint_latitude_callback, 10)
+        self.previous_Waypoint_longitude_subscription = self.create_subscription(Float32, 'previous_waypoint_longitude', self.previous_Waypoint_longitude_callback, 10)
+        self.previous_Waypoint_latitude_subscription = self.create_subscription(Float32, 'previous_waypoint_latitude', self.previous_Waypoint_latitude_callback, 10)
 
         # These are publishers that are sensor data from the PCB
         self.windVane_publisher = self.create_publisher(Float32, 'wind_direction', 10)
@@ -63,11 +64,12 @@ class PCBReadWrite(Node):
         self.timer = self.create_timer(timer_period, self.read_PCB)
 
         timer_period = 0.1737  # seconds
+
+        #COMMENT OUT this line to run without the pcb
         self.timer = self.create_timer(timer_period, self.writeToPCB)
 
 
     # The json should be in the form of: {"latitude": 53.54, "longitude": 45.23, "sail_angle": 2.2, "flap_angle": 30.2, "rudder_angle": 11.1, "heading_angle": 145, "wind_angle": 76.0}
-    # WP CMD msg should be in the form of: {"WPCmd": "add | remove", "order": "2", "latitude": 53.54, "longitude": 45.23}
     def read_PCB(self):
 
             if MANUAL_INPUT_MODE:
@@ -104,63 +106,11 @@ class PCBReadWrite(Node):
                 f.data = float(DICT["latitude"])
                 self.latitude_publisher.publish(f)
 
-            if "WaypointCommand" not in DICT:
-                print("No WaypointCommand found")
-                return
-
-            wp_cmd_block = DICT["WaypointCommand"]
-
-            command_type = list(wp_cmd_block.keys())[0]
-            payload = wp_cmd_block[command_type]
-
-            outgoing = {}
-
-            if command_type == "add":
-                if len(payload) == 0:
-                    print("Add command missing waypoint data")
-                    return
-
-                wp = payload[0]
-
-                # Order is optional
-                outgoing = {
-                    "cmd": "add",
-                    "latitude": wp["latitude"],
-                    "longitude": wp["longitude"]
-                }
-
-                if "order" in wp:
-                    outgoing["order"] = wp["order"]
-                
-
-            elif command_type == "remove":
-                if len(payload) == 0:
-                    print("Remove command missing data")
-                    return
-
-                wp = payload[0]
-
-                outgoing = {
-                    "cmd": "remove"
-                }
-
-                # Order optional
-                if "order" in wp:
-                    outgoing["order"] = wp["order"]
-
-            elif command_type == "startFollowing":
-                outgoing = {"cmd": "startFollowing"}
-
-            elif command_type == "stopFollowing":
-                outgoing = {"cmd": "stopFollowing"}
-
-            else:
-                print("Unknown command")
-                return
-
-            msg = String()
-            msg.data = json.dumps(outgoing)
-            self.waypointCmd_publisher.publish(msg)
+            waypoint_commands = ["add", "remove", "startFollowing", "stopFollowing", "setCurrentWaypoint"]
+            if any(cmd in self.PCBStr for cmd in waypoint_commands):
+                msg = String()
+                msg.data = self.PCBStr
+                self.waypointCmd_publisher.publish(msg)
 
     # Update the motors when we hear something from other ROS nodes
     def sail_target_callback(self, msg):
@@ -180,6 +130,12 @@ class PCBReadWrite(Node):
 
     def waypoint_latitude_callback(self, msg):
         self.waypointLat = msg.data
+        
+    def previous_Waypoint_longitude_callback(self, msg):
+        self.prevWaypointLon = msg.data
+
+    def previous_Waypoint_latitude_callback(self, msg):
+        self.prevWaypointLat = msg.data
 
     def writeToPCB(self):
         writeStr = self.PCBStr[:-1]
