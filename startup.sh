@@ -3,6 +3,9 @@
 IMAGE="rredwiz/dalmast:latest"
 
 docker build -t "$IMAGE" .
+
+xhost +local:root
+
 docker run -it \
   -v "$(pwd):/workspace" \
   -w /workspace \
