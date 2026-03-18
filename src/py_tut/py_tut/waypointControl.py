@@ -9,6 +9,7 @@ from rclpy.node import Node
 
 from std_msgs.msg import String
 from std_msgs.msg import Float32
+from std_msgs.msg import Int32
 from std_msgs.msg import Bool
 import json
 
@@ -61,15 +62,31 @@ class waypointControl(Node):
         self.waypointCmd_subscriber = self.create_subscription(String, 'waypoint_command', self.command_callback, 10)
         self.navigationTimer = self.create_timer(0.1, self.waypoint_radius_callback)
         
+        self.waypoint_list_publisher = self.create_publisher(String, 'waypoint_list', 10)
+        self.current_waypoint_index_publisher = self.create_publisher(Int32, 'current_waypoint_index', 10)
+        
         # Following waypoint command
         self.following_enabled_publisher = self.create_publisher(Bool, 'following', 10)
 
         self.bearingAngle = 0
 
+    def publish_waypoint_list(self):
+        msg = String()
+        waypoint_list = {
+            "waypoints": [
+                {
+                    "latitude": wp[0],
+                    "longitude": wp[1]
+                }
+                for wp in self.waypoints
+            ]
+        }
+        msg.data = json.dumps(waypoint_list)
+        self.waypoint_list_publisher.publish(msg)
 
+    
     #recieve a String with JSON, convert it to a dictionary
     def command_callback(self, msg):
-
         try:
             DICT = json.loads(msg.data)
         except json.JSONDecodeError:
@@ -101,12 +118,12 @@ class waypointControl(Node):
             self.meter_waypoints = [
                 self._latlon_to_xy(wp) for wp in self.waypoints
             ]
-
+            self.publish_waypoint_list()
             print(f"Waypoint added: {lat}, {lon}")
+            
 
 
         elif cmd == "remove":
-
             if not self.waypoints:
                 print("No waypoints to remove")
                 return
@@ -118,6 +135,7 @@ class waypointControl(Node):
             else:
                 removed = self.waypoints.pop()
 
+            self.publish_waypoint_list()
             print(f"Removed waypoint: {removed}")
             if self.waypoints:
                 self.current_leg = min(self.current_leg, len(self.waypoints) - 1)
@@ -127,15 +145,12 @@ class waypointControl(Node):
             self.meter_waypoints = [
                 self._latlon_to_xy(wp) for wp in self.waypoints
             ]
-            
 
 
         elif cmd == "startFollowing":
-
             if not self.waypoints:
                 print("No waypoints to follow")
                 return
-            
             self.following_enabled = True
             self.lap_count = 0
             self.race_started = False
@@ -156,14 +171,13 @@ class waypointControl(Node):
         
         elif cmd == "setCurrentWaypoint":
             order = data.get("order")
-
             if isinstance(order, int) and 0 <= order < len(self.waypoints):
                 self.current_leg = order
                 self._was_inside_gate = False  # reset gate tracking
                 print(f"Current waypoint manually set to {self.current_leg}")
             else:
                 print(f"Invalid waypoint index: {order}")
-
+            self.publish_waypoint_list()
         else:
             print(f"Unknown waypoint command: {cmd}")
     
@@ -192,11 +206,11 @@ class waypointControl(Node):
         if self.race_complete:
             return
 
-        # Publish current and previous waypoint
+        # Publish current and previous waypoint coords
         target = self.waypoints[self.current_leg]
         prev_index = (self.current_leg - 1) % len(self.waypoints)
         prev_wp = self.waypoints[prev_index]
-
+        
         msg = Float32()
 
         msg.data = float(target[0])
@@ -210,6 +224,11 @@ class waypointControl(Node):
 
         msg.data = float(prev_wp[1])
         self.prevWaypoint_longitude_publisher.publish(msg)
+        
+        #publish current waypoint index
+        index_msg = Int32()
+        index_msg.data = self.current_leg
+        self.current_waypoint_index_publisher.publish(index_msg)
 
 
     def _latlon_to_xy(self, wp):
@@ -346,5 +365,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-
-
