@@ -69,6 +69,8 @@ class waypointControl(Node):
         self.following_enabled_publisher = self.create_publisher(Bool, 'following', 10)
 
         self.bearingAngle = 0
+        self.publish_waypoint_list()
+        self.list_timer = self.create_timer(1.0, self.publish_waypoint_list)
 
     def publish_waypoint_list(self):
         msg = String()
@@ -83,6 +85,7 @@ class waypointControl(Node):
         }
         msg.data = json.dumps(waypoint_list)
         self.waypoint_list_publisher.publish(msg)
+        print('publishing waypoint list')
 
     
     #recieve a String with JSON, convert it to a dictionary
@@ -350,7 +353,7 @@ def main(args=None):
     D = (44.615673, -63.557152)
 
 
-    waypoints = []
+    waypoints = [A, B, C, D]
 
     rclpy.init(args=args)
 

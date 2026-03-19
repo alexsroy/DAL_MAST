@@ -5,11 +5,13 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
+from std_msgs.msg import Int32
 from std_msgs.msg import Float32
 from std_msgs.msg import Float32MultiArray
 
 import pygame
 from pygame.locals import *
+import json
 import numpy as np
 import math
 import time
@@ -25,7 +27,7 @@ KEYBOARD_CONTROLS = True
 NAV_ALGORITHM = True
 CREATE_POLAR_PLOT = False
 DRAW_THRUST_VECTOR = False
-WAYPOINT_HUD_ENABLE = False
+WAYPOINT_HUD_ENABLE = True
 PUBLISH_VALUES = False
 RUN_PHYSICS = True
 
@@ -73,6 +75,8 @@ BLACK = (0, 0, 0)
 # This is the window that we will render to
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Sailboat Sail Visualization")
+pygame.font.init()
+hud_font = pygame.font.SysFont("Arial", 18)
 
 getCourse = 1
 didInit = 0
@@ -146,7 +150,28 @@ class boat:
         self.course = 0
         self.tacking = 0 # 1 if tacking, 0 otherwise
         self.changingTack = 0
+        
+        # Waypoint stuff (saved in pixels here for simplicity)
+        self.waypoints_xy = []
+        self.current_waypoint_index = 0
+        self.ref_lat = None
+        self.ref_lon = None
 
+    def gps_to_xy(self, lat, lon):
+        R = 6371000  # earth radius in meters
+
+        lat_rad = math.radians(lat)
+        lon_rad = math.radians(lon)
+        ref_lat_rad = math.radians(self.ref_lat)
+        ref_lon_rad = math.radians(self.ref_lon)
+
+        dlat = lat_rad - ref_lat_rad
+        dlon = lon_rad - ref_lon_rad
+
+        x = dlon * R * math.cos(ref_lat_rad)
+        y = dlat * R
+
+        return x, y
     """These next few functions are used in the physics engine to rotate the components of the boat"""
 
     # Turn the sail X degrees
@@ -326,6 +351,7 @@ def renderBackground(boatX, boatY):
 
     limX = SCREEN_WIDTH / tileWidth + 1
     limY = SCREEN_HEIGHT / tileHeight + 1
+
     i = -1
     while i <= limX:
         j = -1
@@ -334,10 +360,35 @@ def renderBackground(boatX, boatY):
             j += 1
         i += 1
 
-    # Render the waypoint in the ocean
+
+    # Render waypoints
     waypointSurf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-    pygame.draw.circle(waypointSurf, (128, 0, 0), (wp.x - nautono.x + SCREEN_WIDTH // 2, wp.y - nautono.y + SCREEN_HEIGHT // 2), wp.rad)
+
+    for i, wp in enumerate(nautono.waypoints_xy):
+        print('here is a waypoint')
+        print(wp)
+        wp_x, wp_y = wp
+
+        screen_x = wp_x - nautono.x + SCREEN_WIDTH // 2
+        screen_y = wp_y - nautono.y + SCREEN_HEIGHT // 2
+
+        color = (128, 0, 0)
+
+        # highlight current waypoint
+        if i == nautono.current_waypoint_index:
+            color = (0, 255, 0)
+
+        pygame.draw.circle(
+            waypointSurf,
+            color,
+            (int(screen_x), int(screen_y)),
+            100
+        )
+
     screen.blit(waypointSurf, (0, 0))
+    
+    
+
 
 # This function is from: https://stackoverflow.com/questions/4183208/how-do-i-rotate-an-image-around-its-center-using-pygame
 # It rotates the image about originPos (a list with two elements describing point on the image), and draws it at location pos (another list)
@@ -465,6 +516,43 @@ def renderHud(fadeVal):
         pygame.draw.line(hudSurf, (255, 255, 0, fadeVal), (convToHudCords(nautono.track[x - 1][0], 1), convToHudCords(nautono.track[x - 1][1], 0)), (convToHudCords(nautono.track[x][0], 1), convToHudCords(nautono.track[x][1], 0)))
 
     screen.blit(hudSurf, (0, 0))
+    
+def renderWaypointHUD():
+
+    if not WAYPOINT_HUD_ENABLE:
+        return
+
+    if len(nautono.waypoints_xy) == 0:
+        return
+
+    idx = nautono.current_waypoint_index
+
+    if idx >= len(nautono.waypoints_xy):
+        return
+
+    wp_x, wp_y = nautono.waypoints_xy[idx]
+
+    dx = wp_x - nautono.x
+    dy = wp_y - nautono.y
+
+    distance = math.sqrt(dx*dx + dy*dy)
+
+    bearing = math.degrees(math.atan2(dx, dy))
+
+    lines = [
+        f"Waypoint Index: {idx}",
+        f"Distance: {distance:.1f} m",
+        f"Bearing: {bearing:.1f} deg"
+    ]
+
+    y = 10
+
+    for line in lines:
+
+        text_surface = hud_font.render(line, True, (255,255,255))
+        screen.blit(text_surface, (10, y))
+
+        y += 22
 
 #def calcTriArea(A, B, C): # Input 3 lists of 2 points for each corner in format [x, y]
 #    return abs((B[0] * A[1] - A[0] * B[1]) + (C[0] * B[1] - C[1] * B[0]) + (A[0] * C[1] - A[1] * C[0])) / 2
@@ -521,6 +609,9 @@ class SIM_ROS_HANDLER(Node):
 
         self.bearingAngle_subscriber = self.create_subscription(Float32, 'bearing_angle', self.bearing_angle_callback, 10)
         self.bearing_subscriber = self.create_subscription(Float32MultiArray, 'bearing', self.bearing_callback, 10)
+        
+        self.waypoint_list_subscription = self.create_subscription(String, 'waypoint_list', self.waypoint_list_callback, 10)
+        self.current_waypoint_index_subscription = self.create_subscription(Int32, 'current_waypoint_index', self.waypoint_index_callback, 10)
 
         timer_period = 0.02  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
@@ -547,6 +638,57 @@ class SIM_ROS_HANDLER(Node):
     def bearing_angle_callback(self, msg):
         global nautono
         nautono.bearingAng = msg.data
+        
+    # change to fit the format of other callbacks once the functionality is confirmed
+    def waypoint_list_callback(self, msg):
+
+        print("=== WAYPOINT LIST MESSAGE RECEIVED ===")
+
+        try:
+            data = json.loads(msg.data)
+        except json.JSONDecodeError:
+            print("Invalid JSON")
+            return
+
+        if "waypoints" not in data:
+            print("No 'waypoints' key in message")
+            return
+
+        gps_waypoints = data["waypoints"]
+
+        print("Raw GPS waypoints:", gps_waypoints)
+
+        if len(gps_waypoints) == 0:
+            print("Empty waypoint list")
+            return
+
+        # Set reference
+        first = gps_waypoints[0]
+        nautono.ref_lat = first["latitude"]
+        nautono.ref_lon = first["longitude"]
+
+        nautono.waypoints_xy = []
+
+        for wp in gps_waypoints:
+            lat = wp["latitude"]
+            lon = wp["longitude"]
+
+            x, y = nautono.gps_to_xy(lat, lon)
+            nautono.waypoints_xy.append((x, y))
+
+        print("Converted XY waypoints:", nautono.waypoints_xy)
+
+        # Spawn boat near first waypoint
+        first_wp = nautono.waypoints_xy[0]
+        nautono.x = first_wp[0] - 100
+        nautono.y = first_wp[1] - 100
+
+        print("Boat spawned at:", nautono.x, nautono.y)
+    
+    def waypoint_index_callback(self, msg):
+        global nautono
+        nautono.current_waypoint_index = msg.data
+        print("Current waypoint index:", nautono.current_waypoint_index)
 
     def timer_callback(self):
         global counter
@@ -560,6 +702,9 @@ class SIM_ROS_HANDLER(Node):
         global TabBlocker
         global settingWP
 
+        if counter % 50 == 0:
+            print("Boat pos:", nautono.x, nautono.y)
+            print("Waypoints XY:", nautono.waypoints_xy)
         # Get mouse position to set wind direction
         mouse_x, mouse_y = pygame.mouse.get_pos()
 
@@ -641,6 +786,7 @@ class SIM_ROS_HANDLER(Node):
         nautono.renderBoat()
 
         if WAYPOINT_HUD_ENABLE:
+            renderWaypointHUD()
             if hudState == 1 and opacity < 255: # Isn't it funny that for an engineering demonstrater I added a fade effect to the hud?
                 opacity += 1
 
@@ -653,7 +799,7 @@ class SIM_ROS_HANDLER(Node):
             elif hudState == -1 and opacity == 0:
                 hudState = 0
 
-            renderHud(opacity)
+            #renderHud(opacity)
 
             if counter % 250 == 1:
                 nautono.addTrack()
@@ -686,7 +832,7 @@ class SIM_ROS_HANDLER(Node):
         #f.data = float(math.degrees(nautono.course)) # This will have to remain in the nav algorithm
         #self.targetHeading_publisher.publish(f)
 
-        print(nautono.rudderDeflection)
+        #print(nautono.rudderDeflection)
 
         # Update the display
         pygame.display.flip()
