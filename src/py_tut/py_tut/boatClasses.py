@@ -172,7 +172,20 @@ class boat:
         y = dlat * R
 
         return x, y
+        
+    def xy_to_gps(self, x, y):
+        R = 6371000  # Earth radius (m)
+
+        ref_lat_rad = math.radians(self.ref_lat)
+
+        lat = self.ref_lat + math.degrees(y / R)
+        lon = self.ref_lon + math.degrees(x / (R * math.cos(ref_lat_rad)))
+
+        return lat, lon
+    
     """These next few functions are used in the physics engine to rotate the components of the boat"""
+    def update_boat_position_from_gps(self, lat, lon):
+        self.x, self.y = self.gps_to_xy(lat, lon)
 
     # Turn the sail X degrees
     def turnSail(self, degs):
@@ -365,8 +378,6 @@ def renderBackground(boatX, boatY):
     waypointSurf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
 
     for i, wp in enumerate(nautono.waypoints_xy):
-        print('here is a waypoint')
-        print(wp)
         wp_x, wp_y = wp
 
         screen_x = wp_x - nautono.x + SCREEN_WIDTH // 2
@@ -641,9 +652,6 @@ class SIM_ROS_HANDLER(Node):
         
     # change to fit the format of other callbacks once the functionality is confirmed
     def waypoint_list_callback(self, msg):
-
-        print("=== WAYPOINT LIST MESSAGE RECEIVED ===")
-
         try:
             data = json.loads(msg.data)
         except json.JSONDecodeError:
@@ -655,18 +663,14 @@ class SIM_ROS_HANDLER(Node):
             return
 
         gps_waypoints = data["waypoints"]
-
         print("Raw GPS waypoints:", gps_waypoints)
 
         if len(gps_waypoints) == 0:
             print("Empty waypoint list")
             return
 
-        # Set reference
-        first = gps_waypoints[0]
-        nautono.ref_lat = first["latitude"]
-        nautono.ref_lon = first["longitude"]
-
+        nautono.ref_lat = gps_waypoints[0]["latitude"]
+        nautono.ref_lon = gps_waypoints[0]["longitude"]
         nautono.waypoints_xy = []
 
         for wp in gps_waypoints:
@@ -678,12 +682,12 @@ class SIM_ROS_HANDLER(Node):
 
         print("Converted XY waypoints:", nautono.waypoints_xy)
 
-        # Spawn boat near first waypoint
-        first_wp = nautono.waypoints_xy[0]
-        nautono.x = first_wp[0] - 100
-        nautono.y = first_wp[1] - 100
+        # # Spawn boat near first waypoint
+        # first_wp = nautono.waypoints_xy[0]
+        # nautono.x = first_wp[0] - 100
+        # nautono.y = first_wp[1] - 100
 
-        print("Boat spawned at:", nautono.x, nautono.y)
+        # print("Boat spawned at:", nautono.x, nautono.y)
     
     def waypoint_index_callback(self, msg):
         global nautono
@@ -770,6 +774,22 @@ class SIM_ROS_HANDLER(Node):
 
             if keys[pygame.K_t]:
                 nautono.addTrack()
+            if keys[pygame.K_1]:
+                if nautono.waypoints_xy:
+                    teleportToX, teleportToY  = nautono.waypoints_xy[1]
+                    teleportToX -= 100
+                    teleportToY -= 100
+                    nautono.x = teleportToX
+                    nautono.y = teleportToY
+                    print('teleported to first waypoint')
+            if keys[pygame.K_2]:
+                if len(nautono.waypoints_xy) >= 2:
+                    teleportToX, teleportToY  = nautono.waypoints_xy[2]
+                    teleportToX -= 100
+                    teleportToY -= 100
+                    nautono.x = teleportToX
+                    nautono.y = teleportToY
+                    print('teleported to second waypoint')
 
         wind_direction = math.radians(10)
 
@@ -819,10 +839,15 @@ class SIM_ROS_HANDLER(Node):
             f.data = float(nautono.rudderDeflection)
             self.rudderAngle_publisher.publish(f)
 
-            f.data = float(nautono.x)
-            self.longitude_publisher.publish(f)
-            f.data = float(nautono.y)
-            self.latitude_publisher.publish(f)
+            # Convert sim XY → GPS
+            if nautono.ref_lat is not None and nautono.ref_lon is not None:
+                lat, lon = nautono.xy_to_gps(nautono.x, nautono.y)
+
+                f.data = float(lat)
+                self.latitude_publisher.publish(f)
+
+                f.data = float(lon)
+                self.longitude_publisher.publish(f)
 
             f.data = float(wp.x)
             self.waypoint_longitude_publisher.publish(f)
@@ -833,7 +858,6 @@ class SIM_ROS_HANDLER(Node):
         #self.targetHeading_publisher.publish(f)
 
         #print(nautono.rudderDeflection)
-
         # Update the display
         pygame.display.flip()
         counter += 1
@@ -853,8 +877,13 @@ def main(args=None):
     rclpy.init(args=args)
 
     sailboat_sim = SIM_ROS_HANDLER()
+    clock = pygame.time.Clock()
 
-    rclpy.spin(sailboat_sim)
+    while rclpy.ok():
+        rclpy.spin_once(sailboat_sim, timeout_sec=0.0)
+        
+        # Limit to 50 FPS (IMPORTANT)
+        clock.tick(50)
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
