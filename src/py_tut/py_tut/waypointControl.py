@@ -22,6 +22,8 @@ GATE_WIDTH_METERS = 50
 class waypointControl(Node):
     def __init__(self, waypoints):
         super().__init__('waypointControl')
+        qos = QoSProfile(depth=1)
+        qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
 
         self.waypoints = waypoints  # list of (lat, lon)
         #if there are waypoints set, then create the waypoints from the starting waypoint
@@ -64,7 +66,7 @@ class waypointControl(Node):
         self.waypointCmd_subscriber = self.create_subscription(String, 'waypoint_command', self.command_callback, 10)
         self.navigationTimer = self.create_timer(0.1, self.waypoint_radius_callback)
         
-        self.waypoint_list_publisher = self.create_publisher(String, 'waypoint_list', 10)
+        self.waypoint_list_publisher = self.create_publisher(String, 'waypoint_list', qos)
         self.current_waypoint_index_publisher = self.create_publisher(Int32, 'current_waypoint_index', 10)
         
         # Following waypoint command
@@ -182,6 +184,9 @@ class waypointControl(Node):
             else:
                 print(f"Invalid waypoint index: {order}")
             self.publish_waypoint_list()
+        elif cmd == "refreshWaypoints":
+            self.publish_waypoint_list()
+            print('waypoints published')
         else:
             print(f"Unknown waypoint command: {cmd}")
     

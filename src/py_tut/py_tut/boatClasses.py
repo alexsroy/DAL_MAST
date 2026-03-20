@@ -8,6 +8,7 @@ from std_msgs.msg import String
 from std_msgs.msg import Int32
 from std_msgs.msg import Float32
 from std_msgs.msg import Float32MultiArray
+from rclpy.qos import QoSProfile, DurabilityPolicy
 
 import pygame
 from pygame.locals import *
@@ -20,7 +21,8 @@ import random as rnd
 import os
 from ament_index_python.packages import get_package_share_directory
 
-
+qos = QoSProfile(depth=1)
+qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
 
 # If enabled, can control the sailboat with the keyboard
 KEYBOARD_CONTROLS = True
@@ -559,10 +561,8 @@ def renderWaypointHUD():
     y = 10
 
     for line in lines:
-
         text_surface = hud_font.render(line, True, (255,255,255))
         screen.blit(text_surface, (10, y))
-
         y += 22
 
 #def calcTriArea(A, B, C): # Input 3 lists of 2 points for each corner in format [x, y]
@@ -621,7 +621,7 @@ class SIM_ROS_HANDLER(Node):
         self.bearingAngle_subscriber = self.create_subscription(Float32, 'bearing_angle', self.bearing_angle_callback, 10)
         self.bearing_subscriber = self.create_subscription(Float32MultiArray, 'bearing', self.bearing_callback, 10)
         
-        self.waypoint_list_subscription = self.create_subscription(String, 'waypoint_list', self.waypoint_list_callback, 10)
+        self.waypoint_list_subscription = self.create_subscription(String, 'waypoint_list', self.waypoint_list_callback, qos)
         self.current_waypoint_index_subscription = self.create_subscription(Int32, 'current_waypoint_index', self.waypoint_index_callback, 10)
 
         timer_period = 0.02  # seconds

@@ -106,7 +106,7 @@ class PCBReadWrite(Node):
                 f.data = float(DICT["latitude"])
                 self.latitude_publisher.publish(f)
 
-            waypoint_commands = ["add", "remove", "startFollowing", "stopFollowing", "setCurrentWaypoint"]
+            waypoint_commands = ["add", "remove", "startFollowing", "stopFollowing", "setCurrentWaypoint", "refreshWaypoints"]
             if any(cmd in self.PCBStr for cmd in waypoint_commands):
                 msg = String()
                 msg.data = self.PCBStr
