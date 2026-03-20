@@ -28,7 +28,7 @@ NAV_ALGORITHM = True
 CREATE_POLAR_PLOT = False
 DRAW_THRUST_VECTOR = False
 WAYPOINT_HUD_ENABLE = True
-PUBLISH_VALUES = False
+PUBLISH_VALUES = True
 RUN_PHYSICS = True
 
 # use share dir to get assets
@@ -383,17 +383,17 @@ def renderBackground(boatX, boatY):
         screen_x = wp_x - nautono.x + SCREEN_WIDTH // 2
         screen_y = wp_y - nautono.y + SCREEN_HEIGHT // 2
 
-        color = (128, 0, 0)
+        color = (232, 51, 19)
 
         # highlight current waypoint
         if i == nautono.current_waypoint_index:
-            color = (0, 255, 0)
+            color = (52, 235, 94)
 
         pygame.draw.circle(
             waypointSurf,
             color,
             (int(screen_x), int(screen_y)),
-            100
+            50
         )
 
     screen.blit(waypointSurf, (0, 0))
@@ -776,7 +776,7 @@ class SIM_ROS_HANDLER(Node):
                 nautono.addTrack()
             if keys[pygame.K_1]:
                 if nautono.waypoints_xy:
-                    teleportToX, teleportToY  = nautono.waypoints_xy[1]
+                    teleportToX, teleportToY  = nautono.waypoints_xy[0]
                     teleportToX -= 100
                     teleportToY -= 100
                     nautono.x = teleportToX
@@ -784,7 +784,7 @@ class SIM_ROS_HANDLER(Node):
                     print('teleported to first waypoint')
             if keys[pygame.K_2]:
                 if len(nautono.waypoints_xy) >= 2:
-                    teleportToX, teleportToY  = nautono.waypoints_xy[2]
+                    teleportToX, teleportToY  = nautono.waypoints_xy[1]
                     teleportToX -= 100
                     teleportToY -= 100
                     nautono.x = teleportToX
@@ -853,6 +853,7 @@ class SIM_ROS_HANDLER(Node):
             self.waypoint_longitude_publisher.publish(f)
             f.data = float(wp.y)
             self.waypoint_latitude_publisher.publish(f)
+        
 
         #f.data = float(math.degrees(nautono.course)) # This will have to remain in the nav algorithm
         #self.targetHeading_publisher.publish(f)

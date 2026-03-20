@@ -15,8 +15,8 @@ from std_msgs.msg import Int32
 from std_msgs.msg import Bool
 import json
 
-
-GATE_WIDTH_METERS = 10
+#USING 50 for simplicity in the simulation - should actually be 10
+GATE_WIDTH_METERS = 50
 
 
 class waypointControl(Node):
@@ -242,7 +242,7 @@ class waypointControl(Node):
         lat, lon = wp
         ref_lat, ref_lon = self.origin
 
-        R = 6371008  # Earth radius (m)
+        R = 6371000  # Earth radius (m)
 
         dlat = math.radians(lat - ref_lat)
         dlon = math.radians(lon - ref_lon)
