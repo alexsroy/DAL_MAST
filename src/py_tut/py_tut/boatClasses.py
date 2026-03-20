@@ -34,11 +34,11 @@ pkg_share_dir = get_package_share_directory('py_tut')
 images_dir = os.path.join(pkg_share_dir, 'assets')
 
 # get image paths
-ocean_path = os.path.join(images_dir, 'ocean.jpg')
-wind_path = os.path.join(images_dir, 'arrow.png')
-hull_path = os.path.join(images_dir, 'hull.png')
-sail_path = os.path.join(images_dir, 'sail.png')
-flap_path = os.path.join(images_dir, 'flap.png')
+ocean_path = os.path.join(images_dir, '/workspace/src/py_tut/assets/ocean.jpg')
+wind_path = os.path.join(images_dir, '/workspace/src/py_tut/assets/arrow.png')
+hull_path = os.path.join(images_dir, '/workspace/src/py_tut/assets/hull.png')
+sail_path = os.path.join(images_dir, '/workspace/src/py_tut/assets/sail.png')
+flap_path = os.path.join(images_dir, '/workspace/src/py_tut/assets/flap.png')
 
 # Load image files
 oceanTile = pygame.image.load(ocean_path)
