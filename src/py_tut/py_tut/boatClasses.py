@@ -260,10 +260,12 @@ class boat:
         # Since when sailing around 25 degrees into the wind, the speed drops off to zero,
         # I'm making the assumption that aerodynamic drag is going to be a constant magnitude of 0.709T
         # Which acts in the direction of the wind, but needs to be projected onto the line of heading
-        drag = 0.709 * thrustFactor * self.maxThrust * math.cos(math.radians(self.angle - windAng)) * min(abs(self.sailAng - windAng) / 12, 1)
+
+        # NOTE we disabled this for a sec lmao
+        # drag = 0.709 * thrustFactor * self.maxThrust * math.cos(math.radians(self.angle - windAng)) * min(abs(self.sailAng - windAng) / 12, 1)
 
         """ RAW VALUE FROM MOVELLA"""
-        self.speed = self.thrust - drag
+        self.speed = self.thrust # - drag <---- uncomment this when done testing
 
         self.sailForwards(self.speed)
 
@@ -574,7 +576,9 @@ class SIM_ROS_HANDLER(Node):
         mouse_x, mouse_y = pygame.mouse.get_pos()
 
         # Wind comes from the mouse towards the centre of the screen, store it as an angle
-        wind_direction = math.atan2(mouse_y - SCREEN_HEIGHT // 2, mouse_x - SCREEN_WIDTH // 2)
+        # wind_direction = math.atan2(mouse_y - SCREEN_HEIGHT // 2, mouse_x - SCREEN_WIDTH // 2)
+        # TODO
+        wind_direction = math.radians(10)
 
         # If the right mouse button is released, snap the boat to point to that direction
         for event in pygame.event.get():
@@ -635,8 +639,6 @@ class SIM_ROS_HANDLER(Node):
 
             if keys[pygame.K_t]:
                 nautono.addTrack()
-
-        # wind_direction = math.radians(10)
 
         # Run all the physics
         #if not counter:
