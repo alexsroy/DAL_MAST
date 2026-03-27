@@ -16,7 +16,9 @@ from std_msgs.msg import Float32
 maxFlapDeflection = 45
 
 # If you change this variable, change the one in waypoint control.py
-D = 0.0005 # Tacking box width should be approx 40m
+# Set to 100 pixels for simulator, change to 0.0005 for real GPS coordinates
+D = 100 # Tacking box width in pixel space
+
 BBReverseSpace = 2 # Behind the previous WP distance of BB
 
 
@@ -202,11 +204,12 @@ class navigationNode(Node):
 
             else:
                 # Straight sailing (very mathematically complex)
-                self.headingTarget = self.bearing
+                # update: changed to bearing angle
+                self.headingTarget = self.bearingAngle
 
         # If boat is out of the BB
         else:
-            slope = math.tan(math(self.bearingAngle))
+            slope = math.tan(math.radians(self.bearingAngle))
             intercept = self.bearing[0][1]
 
             # y = mx + b, and we check whether the boat is above or below it.
@@ -217,12 +220,13 @@ class navigationNode(Node):
             targetLatitude = slope * self.longitude + intercept
 
             BBReturnHeading = 0
+            # update: changing the second condition to or instead of and because the original code had a bug
             if self.latitude >= targetLatitude: # Basically to sail back to the BB, we need to sail back to it at a 45 degree angle.
                 #                                 If we are above the line, we need to take the bearing and add 45 degrees, only in quadrents 2 and 3
                 #                                 in quadrents 1 and 4, we subtract 45 degrees
-                BBReturnHeading = ((self.bearing >= 90 and self.bearing <= 270) * (self.bearing + 45) + (self.bearing < 90 and self.bearing > 270) * (self.bearing - 45)) % 360
+                BBReturnHeading = ((self.bearingAngle >= 90 and self.bearingAngle <= 270) * (self.bearingAngle + 45) + (self.bearingAngle < 90 or self.bearingAngle > 270) * (self.bearingAngle - 45)) % 360
             else:                               # If we are below, we reverse the logic and subtract 45 in quadrents 2 and 3
-                BBReturnHeading = ((self.bearing >= 90 and self.bearing <= 270) * (self.bearing - 45) + (self.bearing < 90 and self.bearing > 270) * (self.bearing + 45)) % 360
+                BBReturnHeading = ((self.bearingAngle >= 90 and self.bearingAngle <= 270) * (self.bearingAngle - 45) + (self.bearingAngle < 90 or self.bearingAngle > 270) * (self.bearingAngle + 45)) % 360
 
             # Now w need to do a check against the wind direction.
             # If the wind is against the return heading, we want to take the leg closest to the return heading. At worst it will be 45 degrees off
