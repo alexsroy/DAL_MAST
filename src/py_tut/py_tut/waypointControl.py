@@ -69,6 +69,8 @@ class waypointControl(Node):
         self.waypoint_list_publisher = self.create_publisher(String, 'waypoint_list', qos)
         self.current_waypoint_index_publisher = self.create_publisher(Int32, 'current_waypoint_index', 10)
         
+        self.waypoint_distance_publisher = self.create_publisher(Float32, 'waypoint_distance', 10)
+        
         # Following waypoint command
         self.following_enabled_publisher = self.create_publisher(Bool, 'following', 10)
 
@@ -208,6 +210,10 @@ class waypointControl(Node):
         boat_pos = (self.latitude, self.longitude)
 
         triggered = self.update(boat_pos)
+        _, distance = self.point_in_gate(boat_pos)
+        dist_msg = Float32()
+        dist_msg.data = float(distance)
+        self.waypoint_distance_publisher.publish(dist_msg)
 
         if triggered:
             print("Entered waypoint gate")

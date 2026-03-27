@@ -156,6 +156,7 @@ class boat:
         # Waypoint stuff (saved in pixels here for simplicity)
         self.waypoints_xy = []
         self.current_waypoint_index = 0
+        self.current_waypoint_distance = 500
         self.ref_lat = None
         self.ref_lon = None
 
@@ -395,7 +396,7 @@ def renderBackground(boatX, boatY):
             waypointSurf,
             color,
             (int(screen_x), int(screen_y)),
-            50
+            25
         )
 
     screen.blit(waypointSurf, (0, 0))
@@ -548,14 +549,23 @@ def renderWaypointHUD():
     dx = wp_x - nautono.x
     dy = wp_y - nautono.y
 
-    distance = math.sqrt(dx*dx + dy*dy)
+    # distance = math.sqrt(dx*dx + dy*dy)
+    bearing_to_wp = (math.degrees(math.atan2(dy, dx)))
+    if bearing_to_wp < 0:
+        bearing_to_wp = 360 - math.fabs(bearing_to_wp)
+        
+    boat_heading = (math.degrees(nautono.angle))
+    
+    if boat_heading < 0:
+        boat_heading = 360 - math.fabs(boat_heading)
 
-    bearing = math.degrees(math.atan2(dx, dy))
-
+    distanceFromWaypointControl = nautono.current_waypoint_distance
+    
     lines = [
         f"Waypoint Index: {idx}",
-        f"Distance: {distance:.1f} m",
-        f"Bearing: {bearing:.1f} deg"
+        f"Distance: {distanceFromWaypointControl:.1f} m",
+        f"Bearing to WP: {bearing_to_wp:.1f} deg",
+        f"Boat Heading: {boat_heading:.1f} deg",
     ]
 
     y = 10
@@ -623,6 +633,8 @@ class SIM_ROS_HANDLER(Node):
         
         self.waypoint_list_subscription = self.create_subscription(String, 'waypoint_list', self.waypoint_list_callback, qos)
         self.current_waypoint_index_subscription = self.create_subscription(Int32, 'current_waypoint_index', self.waypoint_index_callback, 10)
+        
+        self.waypoint_distance_subscription = self.create_subscription(Float32, 'waypoint_distance', self.waypoint_distance_callback, 10)
 
         timer_period = 0.02  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
@@ -694,6 +706,11 @@ class SIM_ROS_HANDLER(Node):
         nautono.current_waypoint_index = msg.data
         print("Current waypoint index:", nautono.current_waypoint_index)
 
+    def waypoint_distance_callback(self, msg):
+        global nautono
+        nautono.current_waypoint_distance = msg.data
+        print("Current waypoint distance", nautono.current_waypoint_distance)
+        
     def timer_callback(self):
         global counter
         global nautono
