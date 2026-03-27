@@ -24,9 +24,9 @@ from ament_index_python.packages import get_package_share_directory
 KEYBOARD_CONTROLS = True
 NAV_ALGORITHM = True
 CREATE_POLAR_PLOT = False
-DRAW_THRUST_VECTOR = False
-WAYPOINT_HUD_ENABLE = False
-PUBLISH_VALUES = False
+DRAW_THRUST_VECTOR = True
+WAYPOINT_HUD_ENABLE = True
+PUBLISH_VALUES = True
 RUN_PHYSICS = True
 
 # use share dir to get assets
@@ -522,6 +522,9 @@ class SIM_ROS_HANDLER(Node):
         self.bearingAngle_subscriber = self.create_subscription(Float32, 'bearing_angle', self.bearing_angle_callback, 10)
         self.bearing_subscriber = self.create_subscription(Float32MultiArray, 'bearing', self.bearing_callback, 10)
 
+        # debug subscriber to set the waypoint x and y in one command
+        self.debug_wp_subscriber = self.create_subscription(Float32MultiArray, 'debug_wp', self.debug_wp_callback, 10)
+
         timer_period = 0.02  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
@@ -547,6 +550,13 @@ class SIM_ROS_HANDLER(Node):
     def bearing_angle_callback(self, msg):
         global nautono
         nautono.bearingAng = msg.data
+
+    # debug function to set the waypoint x and y from terminal
+    # publish as: ros2 topic pub --once /debug_wp std_msgs/msg/Float32MultiArray 'data: [x, y]'
+    def debug_wp_callback(self, msg):
+        global wp
+        wp.x = msg.data[0]
+        wp.y = msg.data[1]
 
     def timer_callback(self):
         global counter
@@ -626,7 +636,7 @@ class SIM_ROS_HANDLER(Node):
             if keys[pygame.K_t]:
                 nautono.addTrack()
 
-        wind_direction = math.radians(10)
+        # wind_direction = math.radians(10)
 
         # Run all the physics
         #if not counter:
