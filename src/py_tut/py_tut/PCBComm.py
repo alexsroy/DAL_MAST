@@ -15,8 +15,8 @@ class PCBReadWrite(Node):
         self.PCBStr = ""
 
         #COMMENT OUT these lines to run without the pcb
-        self.ser = serial.Serial("/dev/ttyS0", 115200, timeout = 0.1)
-        self.ser.reset_input_buffer()
+        #self.ser = serial.Serial("/dev/ttyS0", 115200, timeout = 0.1)
+        #self.ser.reset_input_buffer()
 
         # OUTPUTS
         self.targetBearing = 0.0                # These are floats to be published for informative value
@@ -66,7 +66,7 @@ class PCBReadWrite(Node):
         timer_period = 0.1737  # seconds
 
         #COMMENT OUT this line to run without the pcb
-        self.timer = self.create_timer(timer_period, self.writeToPCB)
+        #self.timer = self.create_timer(timer_period, self.writeToPCB)
 
 
     # The json should be in the form of: {"latitude": 53.54, "longitude": 45.23, "sail_angle": 2.2, "flap_angle": 30.2, "rudder_angle": 11.1, "heading_angle": 145, "wind_angle": 76.0}
@@ -106,7 +106,7 @@ class PCBReadWrite(Node):
                 f.data = float(DICT["latitude"])
                 self.latitude_publisher.publish(f)
 
-            waypoint_commands = ["add", "remove", "startFollowing", "stopFollowing", "setCurrentWaypoint"]
+            waypoint_commands = ["add", "remove", "startFollowing", "stopFollowing", "setCurrentWaypoint", "refreshWaypoints"]
             if any(cmd in self.PCBStr for cmd in waypoint_commands):
                 msg = String()
                 msg.data = self.PCBStr
