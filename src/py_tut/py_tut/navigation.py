@@ -15,8 +15,8 @@ from std_msgs.msg import Float32, Float32MultiArray, String
 maxFlapDeflection = 45
 
 # If you change this variable, change the one in waypoint control.py
-# Set to 100 pixels for simulator, change to 0.0005 for real GPS coordinates
-D = 2000 # Tacking box width in pixel space
+# Set to 1000 pixels for simulator, change to 0.0005 for real GPS coordinates
+D = 1000 # Tacking box width in pixel space
 
 BBReverseSpace = 2 # Behind the previous WP distance of BB
 
@@ -252,21 +252,27 @@ class navigationNode(Node):
                 BBReturnHeading = ((self.bearingAngle >= 90 and self.bearingAngle <= 270) * (self.bearingAngle + 45) + (self.bearingAngle < 90 or self.bearingAngle > 270) * (self.bearingAngle - 45)) % 360
             else:                               # If we are below, we reverse the logic and subtract 45 in quadrents 2 and 3
                 BBReturnHeading = ((self.bearingAngle >= 90 and self.bearingAngle <= 270) * (self.bearingAngle - 45) + (self.bearingAngle < 90 or self.bearingAngle > 270) * (self.bearingAngle + 45)) % 360
-                
+
 
             # Now w need to do a check against the wind direction.
             # If the wind is against the return heading, we want to take the leg closest to the return heading. At worst it will be 45 degrees off
             # which will either turn the boat directly into the BB, or sail it alongside the BB.
             # The two legs of the tack can be described as (windAngle +/- tacking_angle) % 360
             if abs(self.shortestAngle(self.windAngle, BBReturnHeading)) < self.TACKING_ANGLE:
-                BBReturnHeading = min(abs(self.shortestAngle(BBReturnHeading, (self.windAngle + self.TACKING_ANGLE) % 360)),
-                abs(self.shortestAngle(BBReturnHeading, (self.windAngle - self.TACKING_ANGLE) % 360)))
+                print("BB: ", BBReturnHeading, "\n", "LHS: ", self.shortestAngle(self.windAngle + self.TACKING_ANGLE, self.bearingAngle), "\n", "RHS", self.shortestAngle(self.windAngle - self.TACKING_ANGLE, self.bearingAngle))
+                print("WIND:", self.windAngle, "\n", "BEARING: ", self.bearingAngle, "\n", "TACKING DIST: ", self.TACKING_ANGLE)
+                if abs(self.shortestAngle(self.windAngle + self.TACKING_ANGLE, BBReturnHeading)) < abs(self.shortestAngle(self.windAngle - self.TACKING_ANGLE, BBReturnHeading)):
+                    BBReturnHeading = (self.windAngle + self.TACKING_ANGLE) % 360
+
+                else:
+                    BBReturnHeading = (self.windAngle - self.TACKING_ANGLE) % 360
 
             self.headingTarget = BBReturnHeading
 
+
         # Finally make sure to publish the target heading lolololol
         f = Float32()
-        print(type(f.data), "    tt    ", type(self.headingTarget))
+        #print(type(f.data), "    tt    ", type(self.headingTarget))
         f.data = float(self.headingTarget)
         self.targetHeading_publisher.publish(f)
 

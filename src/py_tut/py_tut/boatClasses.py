@@ -201,6 +201,8 @@ class boat:
         #print(windSailAng, ",", self.flapAng, ",", self.sailAng, ",", self.flapTarget)
 
         # The unit circle has been tricky, everything is working so far, so I won't change this part
+        """This whole time I had an evil hunch that I did something stupid to break the convention that it goes 0 to 360"""
+        """
         if self.sailAng < -180:
             self.sailAng = 180
         elif self.sailAng > 180:
@@ -210,7 +212,10 @@ class boat:
             self.angle = (self.angle - 180) - 180
         if self.angle < -180:
             self.angle = (self.angle + 180) + 180
+        """
 
+        self.angle = self.angle % 360
+        self.sailAng = self.sailAng % 360
 
         # Actuate the flap
         if self.flapDeflection < self.flapTarget:
@@ -262,10 +267,10 @@ class boat:
         # Which acts in the direction of the wind, but needs to be projected onto the line of heading
 
         # NOTE we disabled this for a sec lmao
-        # drag = 0.709 * thrustFactor * self.maxThrust * math.cos(math.radians(self.angle - windAng)) * min(abs(self.sailAng - windAng) / 12, 1)
+        drag = 0.709 * thrustFactor * self.maxThrust * math.cos(math.radians(self.angle - windAng)) * min(abs(self.sailAng - windAng) / 12, 1)
 
         """ RAW VALUE FROM MOVELLA"""
-        self.speed = self.thrust # - drag <---- uncomment this when done testing
+        self.speed = self.thrust # - drag # <---- uncomment this when done testing
 
         self.sailForwards(self.speed)
 
