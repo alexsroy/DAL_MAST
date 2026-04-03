@@ -29,7 +29,7 @@ KEYBOARD_CONTROLS = True
 NAV_ALGORITHM = True
 CREATE_POLAR_PLOT = False
 DRAW_THRUST_VECTOR = True
-WAYPOINT_HUD_ENABLE = False
+WAYPOINT_HUD_ENABLE = True
 PUBLISH_VALUES = True
 RUN_PHYSICS = True
 
@@ -477,6 +477,10 @@ def convToHudCords(num, isX):
     return num / 10 + isX * 150 + (1 - isX) * 50
 
 def renderHud(fadeVal):
+    # putting a guard so that the fadeval cant go higher than 255
+    if fadeVal > 255:
+        fadeVal = 255
+
     """ Render a minimap at 1/10th scale """
     global nautono
     global wp
@@ -816,18 +820,18 @@ class SIM_ROS_HANDLER(Node):
         if WAYPOINT_HUD_ENABLE:
             renderWaypointHUD()
             if hudState == 1 and opacity < 255: # Isn't it funny that for an engineering demonstrater I added a fade effect to the hud?
-                opacity += 1
+                opacity += 20
 
-            elif hudState == 1 and opacity == 255:
+            elif hudState == 1 and opacity >= 255:
                 hudState = 2
 
             elif hudState == -1 and opacity > 0:
-                opacity -= 1
+                opacity -= 20
 
             elif hudState == -1 and opacity == 0:
                 hudState = 0
 
-            #renderHud(opacity)
+            renderHud(opacity)
 
             if counter % 250 == 1:
                 nautono.addTrack()
