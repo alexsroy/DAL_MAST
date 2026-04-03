@@ -818,7 +818,6 @@ class SIM_ROS_HANDLER(Node):
         nautono.renderBoat()
 
         if WAYPOINT_HUD_ENABLE:
-            renderWaypointHUD()
             if hudState == 1 and opacity < 255: # Isn't it funny that for an engineering demonstrater I added a fade effect to the hud?
                 opacity += 20
 
@@ -832,6 +831,7 @@ class SIM_ROS_HANDLER(Node):
                 hudState = 0
 
             renderHud(opacity)
+            renderWaypointHUD()
 
             if counter % 250 == 1:
                 nautono.addTrack()
