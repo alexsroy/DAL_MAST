@@ -30,7 +30,7 @@ NAV_ALGORITHM = True
 CREATE_POLAR_PLOT = False
 DRAW_THRUST_VECTOR = True
 WAYPOINT_HUD_ENABLE = False
-PUBLISH_VALUES = False
+PUBLISH_VALUES = True
 RUN_PHYSICS = True
 
 # use share dir to get assets

@@ -1,7 +1,7 @@
 <launch>
-  <node pkg="py_tut" exec="comm" name="comm" namespace=""/>
+  <!-- <node pkg="py_tut" exec="comm" name="comm" namespace=""/> !-->
   <node pkg="py_tut" exec="boat" name="boat" namespace=""/>
   <node pkg="py_tut" exec="ctrl" name="ctrl" namespace=""/>
   <node pkg="py_tut" exec="navi" name="navi" namespace=""/>
-  <node pkg="py_tut" exec="wayp" name="wayp" namespace=""/>
+  <!-- <node pkg="py_tut" exec="wayp" name="wayp" namespace=""/> !-->
 </launch>
