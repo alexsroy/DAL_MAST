@@ -6,6 +6,19 @@ from std_msgs.msg import Float32
 
 maxFlapDeflection = 45
 
+def shortestAngle(referenceAngle, targetAngle):
+    returnAngle = referenceAngle - targetAngle
+
+    if returnAngle < -180:
+        returnAngle = 360 - (targetAngle - referenceAngle)
+
+    if returnAngle > 180:
+        returnAngle = (360 - (referenceAngle - targetAngle)) * -1
+
+    return returnAngle
+
+
+
 class controlConfigurationService(Node):
 
     def __init__(self):
@@ -116,17 +129,26 @@ class controlConfigurationService(Node):
         #if ((self.x - wp.x) ** 2 + (self.y - wp.y) ** 2) ** 0.5 < wp.rad:
         #    self.flapTarget = 0
         msg.data = float(flapTarget)
-        self.targetFlapAngle_publisher.publish(msg)
+
+        #NOTE: TEMPORARILY DISABLED
+        #self.targetFlapAngle_publisher.publish(msg)
 
     def rudder_pub_callback(self):
         msg = Float32()
 
-        #print("heading: ", self.heading, "course: ", self.targetHeading)
+        #print("heading: ", self.heading, "target heading: ", self.targetHeading)
 
-        if self.heading - self.targetHeading > 0:
-            rudderTarget = -1 * max(-0.5 * (self.heading - self.targetHeading), -45)
+        print(shortestAngle(self.heading, self.targetHeading))
+
+        if shortestAngle(self.heading, self.targetHeading) < 0:
+            rudderTarget = max(shortestAngle(self.heading, self.targetHeading), -45)
+
+
         else:
-            rudderTarget = -1 * min(-0.5 * (self.heading - self.targetHeading), 45)
+            rudderTarget = min(shortestAngle(self.heading, self.targetHeading) / 2, 45)
+
+
+        print(rudderTarget, " rrR")
 
         msg.data = float(rudderTarget)
         self.targetRudderAngle_publisher.publish(msg)

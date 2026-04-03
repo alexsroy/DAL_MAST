@@ -242,6 +242,8 @@ class boat:
         #print(windSailAng, ",", self.flapAng, ",", self.sailAng, ",", self.flapTarget)
 
         # The unit circle has been tricky, everything is working so far, so I won't change this part
+        """This whole time I had an evil hunch that I did something stupid to break the convention that it goes 0 to 360"""
+        """
         if self.sailAng < -180:
             self.sailAng = 180
         elif self.sailAng > 180:
@@ -251,7 +253,10 @@ class boat:
             self.angle = (self.angle - 180) - 180
         if self.angle < -180:
             self.angle = (self.angle + 180) + 180
+        """
 
+        self.angle = self.angle % 360
+        self.sailAng = self.sailAng % 360
 
         # Actuate the flap
         if self.flapDeflection < self.flapTarget:
@@ -301,10 +306,12 @@ class boat:
         # Since when sailing around 25 degrees into the wind, the speed drops off to zero,
         # I'm making the assumption that aerodynamic drag is going to be a constant magnitude of 0.709T
         # Which acts in the direction of the wind, but needs to be projected onto the line of heading
+
+        # NOTE we disabled this for a sec lmao
         drag = 0.709 * thrustFactor * self.maxThrust * math.cos(math.radians(self.angle - windAng)) * min(abs(self.sailAng - windAng) / 12, 1)
 
         """ RAW VALUE FROM MOVELLA"""
-        self.speed = self.thrust - drag
+        self.speed = self.thrust # - drag # <---- uncomment this when done testing
 
         self.sailForwards(self.speed)
 
@@ -730,7 +737,9 @@ class SIM_ROS_HANDLER(Node):
         mouse_x, mouse_y = pygame.mouse.get_pos()
 
         # Wind comes from the mouse towards the centre of the screen, store it as an angle
-        wind_direction = math.atan2(mouse_y - SCREEN_HEIGHT // 2, mouse_x - SCREEN_WIDTH // 2)
+        # wind_direction = math.atan2(mouse_y - SCREEN_HEIGHT // 2, mouse_x - SCREEN_WIDTH // 2)
+        # TODO
+        wind_direction = math.radians(10)
 
         # If the right mouse button is released, snap the boat to point to that direction
         for event in pygame.event.get():
@@ -791,24 +800,6 @@ class SIM_ROS_HANDLER(Node):
 
             if keys[pygame.K_t]:
                 nautono.addTrack()
-            if keys[pygame.K_1]:
-                if nautono.waypoints_xy:
-                    teleportToX, teleportToY  = nautono.waypoints_xy[0]
-                    teleportToX -= 100
-                    teleportToY -= 100
-                    nautono.x = teleportToX
-                    nautono.y = teleportToY
-                    print('teleported to first waypoint')
-            if keys[pygame.K_2]:
-                if len(nautono.waypoints_xy) >= 2:
-                    teleportToX, teleportToY  = nautono.waypoints_xy[1]
-                    teleportToX -= 100
-                    teleportToY -= 100
-                    nautono.x = teleportToX
-                    nautono.y = teleportToY
-                    print('teleported to second waypoint')
-
-        wind_direction = math.radians(10)
 
         # Run all the physics
         #if not counter:
