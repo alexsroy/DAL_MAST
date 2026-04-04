@@ -16,7 +16,7 @@ from std_msgs.msg import Bool
 import json
 
 #USING 50 for simplicity in the simulation - should actually be 10
-GATE_WIDTH_METERS = 50
+GATE_WIDTH_METERS = 200
 
 
 class waypointControl(Node):
@@ -46,7 +46,7 @@ class waypointControl(Node):
         self.max_laps = 1
         self.current_leg = 0
         self.lap_count = 0
-        self.following_enabled = False
+        self.following_enabled = True
         self.race_started = False
         self.race_complete = False
         self._was_inside_gate = False
@@ -76,6 +76,11 @@ class waypointControl(Node):
 
         self.bearingAngle = 0
         self.publish_waypoint_list()
+        msg = Bool()
+        msg.data = self.following_enabled
+        self.following_enabled_publisher.publish(msg)
+        self._advance_leg()
+        
 
     def publish_waypoint_list(self):
         msg = String()

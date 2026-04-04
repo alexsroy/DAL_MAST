@@ -156,7 +156,7 @@ class boat:
         # Waypoint stuff (saved in pixels here for simplicity)
         self.waypoints_xy = []
         self.current_waypoint_index = 0
-        self.current_waypoint_distance = 500
+        self.current_waypoint_distance = 999 # 999 is arbitrary #sorry
         self.ref_lat = None
         self.ref_lon = None
 
@@ -311,17 +311,14 @@ class boat:
         drag = 0.709 * thrustFactor * self.maxThrust * math.cos(math.radians(self.angle - windAng)) * min(abs(self.sailAng - windAng) / 12, 1)
 
         """ RAW VALUE FROM MOVELLA"""
-        self.speed = self.thrust # - drag # <---- uncomment this when done testing
+        self.speed = self.thrust - drag
 
         self.sailForwards(self.speed)
 
-        # Rotate boat based on the rudder angle.
-        # Use a minimum turn authority so the rudder works even at low/zero thrust
-        # (otherwise the boat is completely unsteerable when the sail isn't generating lift)
+        # Rotate boat based on the rudder angle
         manouveringFactor = 10
-        turn_authority = self.thrust if abs(self.thrust) > 0.1 else 0.1
         # Eqn. 3
-        self.rotateBoat(manouveringFactor * (-1 * turn_authority * self.rudderLen * math.sin(math.radians(self.rudderDeflection))))
+        self.rotateBoat(manouveringFactor * (-1 * self.thrust * self.rudderLen * math.sin(math.radians(self.rudderDeflection))))
 
         self.convertToRads()
 
@@ -481,11 +478,11 @@ def convToHudCords(num, isX):
     return num / 10 + isX * 150 + (1 - isX) * 50
 
 # Minimap layout constants
-HUD_X = 150       # left edge of the minimap ocean rect
+HUD_X = 150       # left edge of the minimap rect
 HUD_Y = 50        # top edge
 HUD_W = 500       # width
 HUD_H = 500       # height
-HUD_SCALE = 0.05  # world units per minimap pixel (1/10th was too zoomed — tune this)
+HUD_SCALE = 0.05  # world units per minimap pixel
 
 def worldToHud(wx, wy):
     """Convert absolute world XY to minimap screen coords, centered on the boat."""
@@ -565,6 +562,7 @@ def renderHud(fadeVal):
             color = (232, 51, 19, fadeVal)
         pygame.draw.circle(hudSurf, color, (hx, hy), 6)
         label = hud_font.render(str(i), True, (255, 255, 255))
+        label.set_alpha(fadeVal)
         hudSurf.blit(label, (hx + 7, hy - 7))
     if len(wpt_screen_pts) >= 2:
         pygame.draw.lines(hudSurf, (200, 200, 200, min(fadeVal, 180)), False, wpt_screen_pts, 1)
@@ -625,7 +623,7 @@ def renderWaypointHUD():
     boat_heading = (math.degrees(nautono.angle))
     
     if boat_heading < 0:
-        boat_heading = 360 - math.fabs(boat_heading)
+        boat_heading = 360 - math.fabs(boat_heading)       
 
     distanceFromWaypointControl = nautono.current_waypoint_distance
     
@@ -769,8 +767,8 @@ class SIM_ROS_HANDLER(Node):
 
         # Spawn boat near first waypoint so it can start navigating immediately
         first_wp = nautono.waypoints_xy[0]
-        nautono.x = first_wp[0] - 100
-        nautono.y = first_wp[1] - 100
+        nautono.x = first_wp[0] + 150
+        nautono.y = first_wp[1] - 150
         print("Boat spawned at:", nautono.x, nautono.y)
     
     def waypoint_index_callback(self, msg):
@@ -881,22 +879,19 @@ class SIM_ROS_HANDLER(Node):
             if keys[pygame.K_1]:
                 if nautono.waypoints_xy:
                     teleportToX, teleportToY  = nautono.waypoints_xy[0]
-                    teleportToX -= 100
-                    teleportToY -= 100
+                    teleportToX  += 10
+                    teleportToY += 250
                     nautono.x = teleportToX
                     nautono.y = teleportToY
                     print('teleported to first waypoint')
             if keys[pygame.K_2]:
                 if len(nautono.waypoints_xy) >= 2:
                     teleportToX, teleportToY  = nautono.waypoints_xy[1]
-                    teleportToX -= 100
-                    teleportToY -= 100
+                    teleportToX += 150
+                    teleportToY += 100
                     nautono.x = teleportToX
                     nautono.y = teleportToY
                     print('teleported to second waypoint')
-
-        wind_direction = math.radians(10)
-
 
         # Run all the physics
         #if not counter:
@@ -956,24 +951,7 @@ class SIM_ROS_HANDLER(Node):
                 self.latitude_publisher.publish(f)
 
                 f.data = float(lon)
-                self.longitude_publisher.publish(f)
-
-                # Publish current waypoint GPS coords so navigation.py can compute bearing/heading
-                idx = nautono.current_waypoint_index
-                if nautono.waypoints_xy and idx < len(nautono.waypoints_xy):
-                    wp_lat, wp_lon = nautono.xy_to_gps(*nautono.waypoints_xy[idx])
-                    f.data = float(wp_lat)
-                    self.waypoint_latitude_publisher.publish(f)
-                    f.data = float(wp_lon)
-                    self.waypoint_longitude_publisher.publish(f)
-
-                    # Also publish previous waypoint so navigation.py can draw the bearing corridor
-                    prev_idx = max(0, idx - 1)
-                    prev_lat, prev_lon = nautono.xy_to_gps(*nautono.waypoints_xy[prev_idx])
-                    f.data = float(prev_lat)
-                    self.prev_waypoint_latitude_publisher.publish(f)
-                    f.data = float(prev_lon)
-                    self.prev_waypoint_longitude_publisher.publish(f)
+                self.longitude_publisher.publish(f)                
         
 
         #f.data = float(math.degrees(nautono.course)) # This will have to remain in the nav algorithm
