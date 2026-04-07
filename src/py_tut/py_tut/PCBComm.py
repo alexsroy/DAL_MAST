@@ -66,7 +66,8 @@ class PCBReadWrite(Node):
         timer_period = 0.1737  # seconds
 
         #COMMENT OUT this line to run without the pcb
-        #self.timer = self.create_timer(timer_period, self.writeToPCB)
+        if not MANUAL_INPUT_MODE:
+            self.timer = self.create_timer(timer_period, self.writeToPCB)
 
 
     # The json should be in the form of: {"latitude": 53.54, "longitude": 45.23, "sail_angle": 2.2, "flap_angle": 30.2, "rudder_angle": 11.1, "heading_angle": 145, "wind_angle": 76.0}
