@@ -8,7 +8,6 @@ from std_msgs.msg import String
 from std_msgs.msg import Int32
 from std_msgs.msg import Float32
 from std_msgs.msg import Float32MultiArray
-from rclpy.qos import QoSProfile, DurabilityPolicy
 
 import pygame
 from pygame.locals import *
@@ -21,8 +20,7 @@ import random as rnd
 import os
 from ament_index_python.packages import get_package_share_directory
 
-qos = QoSProfile(depth=1)
-qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
+
 
 # If enabled, can control the sailboat with the keyboard
 KEYBOARD_CONTROLS = True
@@ -701,8 +699,8 @@ class SIM_ROS_HANDLER(Node):
         self.bearingAngle_subscriber = self.create_subscription(Float32, 'bearing_angle', self.bearing_angle_callback, 10)
         self.bearing_subscriber = self.create_subscription(Float32MultiArray, 'bearing', self.bearing_callback, 10)
         
-        self.waypoint_list_subscription = self.create_subscription(String, 'waypoint_list', self.waypoint_list_callback, qos)
-        self.waypoint_list_publisher = self.create_subscription(String, 'waypoint_list', self.waypoint_list_callback, qos)
+        self.waypoint_list_subscription = self.create_subscription(String, 'waypoint_list', self.waypoint_list_callback, 10)
+        #self.waypoint_list_publisher = self.create_subscription(String, 'waypoint_list', self.waypoint_list_callback, 10)
         self.current_waypoint_index_subscription = self.create_subscription(Int32, 'current_waypoint_index', self.waypoint_index_callback, 10)
         
         self.waypoint_distance_subscription = self.create_subscription(Float32, 'waypoint_distance', self.waypoint_distance_callback, 10)
@@ -735,6 +733,7 @@ class SIM_ROS_HANDLER(Node):
         
     # change to fit the format of other callbacks once the functionality is confirmed
     def waypoint_list_callback(self, msg):
+        print('in waypoint_list callback')
         try:
             data = json.loads(msg.data)
         except json.JSONDecodeError:
@@ -764,12 +763,9 @@ class SIM_ROS_HANDLER(Node):
             nautono.waypoints_xy.append((x, y))
 
         print("Converted XY waypoints:", nautono.waypoints_xy)
-
-        # Spawn boat near first waypoint so it can start navigating immediately
-        first_wp = nautono.waypoints_xy[0]
-        nautono.x = first_wp[0] + 150
-        nautono.y = first_wp[1] - 150
         print("Boat spawned at:", nautono.x, nautono.y)
+        
+
     
     def waypoint_index_callback(self, msg):
         global nautono
@@ -884,6 +880,7 @@ class SIM_ROS_HANDLER(Node):
                     nautono.x = teleportToX
                     nautono.y = teleportToY
                     print('teleported to first waypoint')
+                    
             if keys[pygame.K_2]:
                 if len(nautono.waypoints_xy) >= 2:
                     teleportToX, teleportToY  = nautono.waypoints_xy[1]

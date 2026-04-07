@@ -6,8 +6,6 @@
 import rclpy
 import math
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, DurabilityPolicy
-
 
 from std_msgs.msg import String
 from std_msgs.msg import Float32
@@ -15,15 +13,13 @@ from std_msgs.msg import Int32
 from std_msgs.msg import Bool
 import json
 
-#USING 50 for simplicity in the simulation - should actually be 10
-GATE_WIDTH_METERS = 200
 
+GATE_WIDTH_METERS = 200
+FOLLOWING_ENABLED = True
 
 class waypointControl(Node):
     def __init__(self, waypoints):
         super().__init__('waypointControl')
-        qos = QoSProfile(depth=1)
-        qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
 
         self.waypoints = waypoints  # list of (lat, lon)
         #if there are waypoints set, then create the waypoints from the starting waypoint
@@ -46,8 +42,9 @@ class waypointControl(Node):
         self.max_laps = 1
         self.current_leg = 0
         self.lap_count = 0
-        self.following_enabled = True
-        self.race_started = False
+        self.following_enabled = FOLLOWING_ENABLED  #this can also be set by sending startFollowing         
+                                                    #or stopFollowing as a waypointCommand
+        self.race_started = False 
         self.race_complete = False
         self._was_inside_gate = False
         
@@ -66,7 +63,8 @@ class waypointControl(Node):
         self.waypointCmd_subscriber = self.create_subscription(String, 'waypoint_command', self.command_callback, 10)
         self.navigationTimer = self.create_timer(0.1, self.waypoint_radius_callback)
         
-        self.waypoint_list_publisher = self.create_publisher(String, 'waypoint_list', qos)
+        self.waypoint_list_publisher = self.create_publisher(String, 'waypoint_list', 10)
+        self.waypoint_list_timer = self.create_timer(1.0, self.publish_waypoint_list)
         self.current_waypoint_index_publisher = self.create_publisher(Int32, 'current_waypoint_index', 10)
         
         self.waypoint_distance_publisher = self.create_publisher(Float32, 'waypoint_distance', 10)
@@ -95,7 +93,6 @@ class waypointControl(Node):
         }
         msg.data = json.dumps(waypoint_list)
         self.waypoint_list_publisher.publish(msg)
-        print('publishing waypoint list')
 
     
     #recieve a String with JSON, convert it to a dictionary
@@ -191,9 +188,6 @@ class waypointControl(Node):
             else:
                 print(f"Invalid waypoint index: {order}")
             self.publish_waypoint_list()
-        elif cmd == "refreshWaypoints":
-            self.publish_waypoint_list()
-            print('waypoints published')
         else:
             print(f"Unknown waypoint command: {cmd}")
     
@@ -255,7 +249,7 @@ class waypointControl(Node):
         lat, lon = wp
         ref_lat, ref_lon = self.origin
 
-        R = 6371000  # Earth radius (m)
+        R = 6371008  # Earth radius (m)
 
         dlat = math.radians(lat - ref_lat)
         dlon = math.radians(lon - ref_lon)
@@ -364,10 +358,10 @@ def main(args=None):
     # Main loop
 
     #Test racecourse
-    A = (44.6006855, -63.521474)
-    B = (44.6207552, -63.521461)
+    A = (44.616314, -63.549043)
+    B = (44.619957, -63.548778)
     C = (44.619894, -63.557008)
-    D = (44.601491, -63.556063)
+    D = (44.615673, -63.557152)
 
 
     waypoints = [A, B, C, D]
