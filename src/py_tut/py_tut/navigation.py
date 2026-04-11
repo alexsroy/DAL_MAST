@@ -16,7 +16,7 @@ maxFlapDeflection = 45
 
 # If you change this variable, change the one in waypoint control.py
 # Set to 1000 pixels for simulator, change to 0.0005 for real GPS coordinates
-D = 1000 # Tacking box width in pixel space
+D = 0.002 # Tacking box width in pixel space
 
 BBReverseSpace = 2 # Behind the previous WP distance of BB
 
@@ -142,7 +142,7 @@ class navigationNode(Node):
         self.bb_coords.publish(bbcoords)
 
         # Check if boat is in BB
-        if self.pointInRect((self.longitude, self.latitude), boundingBox):
+        if self.is_point_in_rect((self.longitude, self.latitude), boundingBox):
             print('inside the bounding box')
             if abs(self.shortestAngle(self.windAngle, self.bearingAngle)) < self.TACKING_ANGLE:
                 #if tacking check to fix constant tacking bug
@@ -246,8 +246,12 @@ class navigationNode(Node):
             navstate.data = "out of BB"
             self.nav_state.publish(navstate)
 
+            # Reset tacking so the LP is re-evaluated fresh when we re-enter the BB
+            self.tacking = 0
+
             slope = math.tan(math.radians(self.bearingAngle))
-            intercept = self.bearing[0][1]
+            # Correct y-intercept: b = y0 - m*x0 (line passes through bearing[0])
+            intercept = self.bearing[0][1] - slope * self.bearing[0][0]
 
             # y = mx + b, and we check whether the boat is above or below it.
             # If we are greater than y, we want to set course for bearing - 45 and if we're above it we want to set heading for bearing + 45
@@ -256,13 +260,17 @@ class navigationNode(Node):
             # Quadrents 2 and 3 need to reverse the direction we're trying to get do dependant on if we're above or below the line
             targetLatitude = slope * self.longitude + intercept
 
+            # Normalize to [0, 360] so that atan2's negative outputs (e.g. -91° = 269°) are
+            # correctly classified into Q2/Q3 vs Q1/Q4
+            normBearing = self.bearingAngle % 360
+
             BBReturnHeading = 0
             if self.latitude >= targetLatitude: # Basically to sail back to the BB, we need to sail back to it at a 45 degree angle.
                 #                                 If we are above the line, we need to take the bearing and add 45 degrees, only in quadrents 2 and 3
                 #                                 in quadrents 1 and 4, we subtract 45 degrees
-                BBReturnHeading = ((self.bearingAngle >= 90 and self.bearingAngle <= 270) * (self.bearingAngle + 45) + (self.bearingAngle < 90 or self.bearingAngle > 270) * (self.bearingAngle - 45)) % 360
+                BBReturnHeading = ((normBearing >= 90 and normBearing <= 270) * (normBearing + 45) + (normBearing < 90 or normBearing > 270) * (normBearing - 45)) % 360
             else:                               # If we are below, we reverse the logic and subtract 45 in quadrents 2 and 3
-                BBReturnHeading = ((self.bearingAngle >= 90 and self.bearingAngle <= 270) * (self.bearingAngle - 45) + (self.bearingAngle < 90 or self.bearingAngle > 270) * (self.bearingAngle + 45)) % 360
+                BBReturnHeading = ((normBearing >= 90 and normBearing <= 270) * (normBearing - 45) + (normBearing < 90 or normBearing > 270) * (normBearing + 45)) % 360
 
 
             # Now w need to do a check against the wind direction.
@@ -311,9 +319,37 @@ class navigationNode(Node):
         return abs((B[0] * A[1] - A[0] * B[1]) + (C[0] * B[1] - C[1] * B[0]) + (A[0] * C[1] - A[1] * C[0])) / 2
 
     # This line of code may need a magic number tbh to make sure that we are certain the boat is out of the the BB
-    def pointInRect(self, point, BB): # https://stackoverflow.com/questions/17136084/checking-if-a-point-is-inside-a-rotated-rectangle
-        return self.calcTriArea(BB[0], point, BB[3]) + self.calcTriArea(BB[3], point, BB[2]) + self.calcTriArea(BB[2], point, BB[1]) + self.calcTriArea(BB[0], point, BB[1]) <= D * (abs(BB[0][0] - BB[3][0]) / (math.cos(math.radians(self.bearingAngle)) + 0.000000000000000001))
+    # def pointInRect(self, point, BB): # https://stackoverflow.com/questions/17136084/checking-if-a-point-is-inside-a-rotated-rectangle
+    #     return self.calcTriArea(BB[0], point, BB[3]) + self.calcTriArea(BB[3], point, BB[2]) + self.calcTriArea(BB[2], point, BB[1]) + self.calcTriArea(BB[0], point, BB[1]) <= D * (abs(BB[0][0] - BB[3][0]) / (math.cos(math.radians(self.bearingAngle)) + 0.000000000000000001))
 
+    """
+    checks if a point is inside a rotated rectangle using vector dot products.
+    
+    :param pt: Tuple (x, y) for the target point.
+    :param rect_corners: List of 4 tuples [(x, y), ...] representing the vertices 
+                         of the rectangle in sequential order.
+
+    https://stackoverflow.com/questions/2752725/finding-whether-a-point-lies-inside-a-rectangle-or-not
+    response by matt burns showcases this function in javascript
+    """
+    def is_point_in_rect(self, pt, rect_corners):
+        A, B, C, D = rect_corners
+        
+        # vector AM (A to target point)
+        AM = (pt[0] - A[0], pt[1] - A[1])
+        # vector AB (A to B)
+        AB = (B[0] - A[0], B[1] - A[1])
+        # vector AD (A to D)
+        AD = (D[0] - A[0], D[1] - A[1])
+        
+        # calculate the dot products
+        dot_AM_AB = AM[0] * AB[0] + AM[1] * AB[1]
+        dot_AB_AB = AB[0] * AB[0] + AB[1] * AB[1]
+        dot_AM_AD = AM[0] * AD[0] + AM[1] * AD[1]
+        dot_AD_AD = AD[0] * AD[0] + AD[1] * AD[1]
+        
+        # check if scalar projections fall within the rectangle's lengths
+        return (0 <= dot_AM_AB <= dot_AB_AB) and (0 <= dot_AM_AD <= dot_AD_AD)
 
 def main():
     rclpy.init()

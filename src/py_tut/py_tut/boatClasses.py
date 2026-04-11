@@ -100,8 +100,8 @@ class boat:
     # If a variable has 'length' in its name, IT IS NOT the graphical size of the boat, it is a dummy variable for calculation
     def __init__(self):
         # Hull parameters
-        self.x = 400 # SCREEN_WIDTH // 2
-        self.y = 2000 # SCREEN_HEIGHT // 2
+        self.x = 20 # SCREEN_WIDTH // 2
+        self.y = 0 # SCREEN_HEIGHT // 2
         self.length = 40
         self.width = 20
         self.angle = 0  # (rads)

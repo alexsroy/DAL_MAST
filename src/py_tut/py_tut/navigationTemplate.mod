@@ -35,7 +35,7 @@ minimize sail_dist: sum{i in N} magDir1[i] + sum{i in N}magDir2[i]; # We can als
 s.t. c1: x[1] = Boat_x;
 s.t. c2: y[1] = Boat_y;
 s.t. c3: x[n] = BBX_upper;
-s.t. c4: y[n] = BBY_upper;
+# s.t. c4: y[n] = BBY_upper;
 
 # Confine dimensional positions to the BB
 s.t. c5{i in N}: x[i] <= BBX_upper;
