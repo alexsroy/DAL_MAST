@@ -39,7 +39,6 @@ class PCBReadWrite(Node):
         self.sailAngle = 0.0 # (0, 360)
         self.flapAngle = 0.0
         self.rudderAngle = 0.0
-
         # These are subscriptions to store variables from the subscriptions
         self.targetSailAngle_subscriber = self.create_subscription(Float32, 'sail_angle_target', self.sail_target_callback, 10)
         self.targetFlapAngle_subscriber = self.create_subscription(Float32, 'flap_angle_target', self.flap_target_callback, 10)
@@ -106,7 +105,7 @@ class PCBReadWrite(Node):
                         f = Float32()
                         f.data = float(data["windAngle"])
                         self.windVane_publisher.publish(f)
-
+                        self.windAngle = f.data
 
                     if "add" in DICT.keys() or "remove" in DICT.keys() or "startFollowing" in DICT.keys() or "stopFollowing" in DICT.keys():
                         s = String()
@@ -144,7 +143,7 @@ class PCBReadWrite(Node):
 
     def writeToPCB(self):
         writeStr = ""
-        variablesToWrite = [["targetSailAngle", self.targetSailAngle], ["targetFlapAngle", self.targetFlapAngle], ["targetRudderAngle", self.targetRudderAngle], ["targetBearing", self.targetBearing], ["waypointLon", self.waypointLon], ["waypointLat", self.waypointLat], ["headingAngle", self.headingAngle], ["latitude", self.latitude], ["longitude", self.longitude]]
+        variablesToWrite = [["targetSailAngle", self.targetSailAngle], ["targetFlapAngle", self.targetFlapAngle], ["targetRudderAngle", self.targetRudderAngle], ["targetBearing", self.targetBearing], ["waypointLon", self.waypointLon], ["waypointLat", self.waypointLat], ["headingAngle", self.headingAngle], ["latitude", self.latitude], ["longitude", self.longitude], ["windAngle", self.windAngle]]
 
         writeStr += '{\"TargetsOutput\":[{' + variablesToWrite[0][0] + '\": ' + str(variablesToWrite[0][1])
 
