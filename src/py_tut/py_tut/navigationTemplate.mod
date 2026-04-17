@@ -14,7 +14,7 @@ var y{i in N};
 var dirs{i in N}, binary; # Tack left, or tack right
 var magDir1{i in N}, >=0;          # How far to tack
 var magDir2{i in N}, >=0;          # How far to tack
-
+var dirChange, binary;
 # Unit vector components for x and y
 param vectorsX{1, 2};
 param vectorsY{1, 2};
@@ -29,7 +29,9 @@ param BBY_lower;
 param Boat_x;
 param Boat_y;
 
-minimize sail_dist: sum{i in N} magDir1[i] + sum{i in N}magDir2[i]; # We can also add a penalty for tacking if desired
+param startDir;
+
+minimize sail_dist: sum{i in N} magDir1[i] + sum{i in N}magDir2[i] + 0.1 * BBX_upper * dirChange;
 
 # Set start and end positions
 s.t. c1: x[1] = Boat_x;
@@ -51,6 +53,11 @@ s.t. c10{i in 2 .. n}: y[i] = y[i - 1] + magDir1[i - 1] * vectorsY[1] + magDir2[
 s.t. c11{i in N}: magDir1[i] <= 99999 * dirs[i];
 s.t. c12{i in N}: magDir2[i] <= 99999 * (1 - dirs[i]);
 
+# Enforce current heading being 1st tack and set up stuff for taking penalty
+s.t. c13: dirs[1] = startDir;
+s.t. c14: dirChange >= dirs[2] - startDir;
+s.t. c15: dirChange >= -dirs[2] + startDir;
+#s.t. c14{i in 2..n}: dirs[i - 1] = dirs[i] * (1 - dirChange[i]) + dirChange[i] * (1 - dir[i]);
 
 solve;
 display x, y, magDir1, magDir2;
@@ -66,6 +73,7 @@ param BBY_lower := -~;
 param Boat_x := ^;
 param Boat_y := &;
 
+param startDir := _;
 
 param vectorsX :=
 1	!
