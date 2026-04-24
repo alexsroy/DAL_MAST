@@ -30,7 +30,8 @@ setup(
                 'wayp = py_tut.waypointControl:main',
                 'boat = py_tut.boatClasses:main',
                 'ctrl = py_tut.controls:main',
-                'navi = py_tut.navigation:main'
+                'navi = py_tut.navigation:main',
+                'mti = py_tut.mtidata:main'
         ],
     },
 )
