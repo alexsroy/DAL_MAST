@@ -5,3 +5,4 @@ install
 temp.mod
 output.txt
 polar.csv
+src/xsens_mti_ros2_driver/lib/
