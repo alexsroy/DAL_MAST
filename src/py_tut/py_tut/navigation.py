@@ -10,13 +10,14 @@ import rclpy
 from rclpy.node import Node
 import math
 
-from std_msgs.msg import Float32MultiArray
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Float32MultiArray, String
 
 maxFlapDeflection = 45
 
 # If you change this variable, change the one in waypoint control.py
-D = 0.0005 # Tacking box width should be approx 40m
+# Set to 1000 pixels for simulator, change to 0.0005 for real GPS coordinates
+D = 1000 # Tacking box width in pixel space
+
 BBReverseSpace = 2 # Behind the previous WP distance of BB
 
 
@@ -40,6 +41,8 @@ class navigationNode(Node):
         self.targetHeading_publisher = self.create_publisher(Float32, 'heading_target_direction', 10)
         self.bearing_publisher = self.create_publisher(Float32MultiArray, 'bearing', 10)
         self.bearingAngle_publisher = self.create_publisher(Float32, 'bearing_angle', 10)
+        self.nav_state = self.create_publisher(String, 'nav_state', 10)
+        self.bb_coords = self.create_publisher(String, 'bb_coords', 10)
 
         # Calculated variables
         self.counter = 0
@@ -124,12 +127,25 @@ class navigationNode(Node):
 
         boundingBox = [APlus, AMinus, BMinus, BPlus]
 
+        # publishing the bb coords for debug
+        bbcoords = String()
+        bbcoords.data = (f"\nAPlus:  ({APlus[0]:.2f}, {APlus[1]:.2f})\n"
+                        f"AMinus: ({AMinus[0]:.2f}, {AMinus[1]:.2f})\n"
+                        f"BPlus:  ({BPlus[0]:.2f}, {BPlus[1]:.2f})\n"
+                        f"BMinus: ({BMinus[0]:.2f}, {BMinus[1]:.2f})")
+        self.bb_coords.publish(bbcoords)
+
         # Check if boat is in BB
         if self.pointInRect((self.longitude, self.latitude), boundingBox):
             if abs(self.shortestAngle(self.windAngle, self.bearingAngle)) < self.TACKING_ANGLE:
                 # If tacking
                 vector1 = [math.cos(math.radians(self.shortestAngle(self.bearingAngle, self.windAngle + self.TACKING_ANGLE))), math.sin(math.radians(self.shortestAngle(self.bearingAngle, self.windAngle + self.TACKING_ANGLE)))]
                 vector2 = [math.cos(math.radians(self.shortestAngle(self.bearingAngle, self.windAngle - self.TACKING_ANGLE))), math.sin(math.radians(self.shortestAngle(self.bearingAngle, self.windAngle - self.TACKING_ANGLE)))]
+
+                # publish the fact that we're tacking
+                navstate = String()
+                navstate.data = "tacking"
+                self.nav_state.publish(navstate)
 
                 # c = sqrt a squared + b squared
                 BBLen = ((self.bearing[1][0] - self.bearing[0][0]) ** 2 + (self.bearing[1][1] - self.bearing[0][1]) ** 2) ** 0.5
@@ -202,11 +218,24 @@ class navigationNode(Node):
 
             else:
                 # Straight sailing (very mathematically complex)
-                self.headingTarget = self.bearing
+                # update: changed to bearing angle
+
+                # publish the fact that we're straight sailing
+                navstate = String()
+                navstate.data = "straight sailing"
+                self.nav_state.publish(navstate)
+
+                self.headingTarget = self.bearingAngle
 
         # If boat is out of the BB
         else:
-            slope = math.tan(math(self.bearingAngle))
+
+            # publish the fact that we're out of the bounding box
+            navstate = String()
+            navstate.data = "out of BB"
+            self.nav_state.publish(navstate)
+
+            slope = math.tan(math.radians(self.bearingAngle))
             intercept = self.bearing[0][1]
 
             # y = mx + b, and we check whether the boat is above or below it.
@@ -220,23 +249,30 @@ class navigationNode(Node):
             if self.latitude >= targetLatitude: # Basically to sail back to the BB, we need to sail back to it at a 45 degree angle.
                 #                                 If we are above the line, we need to take the bearing and add 45 degrees, only in quadrents 2 and 3
                 #                                 in quadrents 1 and 4, we subtract 45 degrees
-                BBReturnHeading = ((self.bearing >= 90 and self.bearing <= 270) * (self.bearing + 45) + (self.bearing < 90 and self.bearing > 270) * (self.bearing - 45)) % 360
+                BBReturnHeading = ((self.bearingAngle >= 90 and self.bearingAngle <= 270) * (self.bearingAngle + 45) + (self.bearingAngle < 90 or self.bearingAngle > 270) * (self.bearingAngle - 45)) % 360
             else:                               # If we are below, we reverse the logic and subtract 45 in quadrents 2 and 3
-                BBReturnHeading = ((self.bearing >= 90 and self.bearing <= 270) * (self.bearing - 45) + (self.bearing < 90 and self.bearing > 270) * (self.bearing + 45)) % 360
+                BBReturnHeading = ((self.bearingAngle >= 90 and self.bearingAngle <= 270) * (self.bearingAngle - 45) + (self.bearingAngle < 90 or self.bearingAngle > 270) * (self.bearingAngle + 45)) % 360
+
 
             # Now w need to do a check against the wind direction.
             # If the wind is against the return heading, we want to take the leg closest to the return heading. At worst it will be 45 degrees off
             # which will either turn the boat directly into the BB, or sail it alongside the BB.
             # The two legs of the tack can be described as (windAngle +/- tacking_angle) % 360
             if abs(self.shortestAngle(self.windAngle, BBReturnHeading)) < self.TACKING_ANGLE:
-                BBReturnHeading = min(abs(self.shortestAngle(BBReturnHeading, (self.windAngle + self.TACKING_ANGLE) % 360)),
-                abs(self.shortestAngle(BBReturnHeading, (self.windAngle - self.TACKING_ANGLE) % 360)))
+                print("BB: ", BBReturnHeading, "\n", "LHS: ", self.shortestAngle(self.windAngle + self.TACKING_ANGLE, self.bearingAngle), "\n", "RHS", self.shortestAngle(self.windAngle - self.TACKING_ANGLE, self.bearingAngle))
+                print("WIND:", self.windAngle, "\n", "BEARING: ", self.bearingAngle, "\n", "TACKING DIST: ", self.TACKING_ANGLE)
+                if abs(self.shortestAngle(self.windAngle + self.TACKING_ANGLE, BBReturnHeading)) < abs(self.shortestAngle(self.windAngle - self.TACKING_ANGLE, BBReturnHeading)):
+                    BBReturnHeading = (self.windAngle + self.TACKING_ANGLE) % 360
+
+                else:
+                    BBReturnHeading = (self.windAngle - self.TACKING_ANGLE) % 360
 
             self.headingTarget = BBReturnHeading
 
+
         # Finally make sure to publish the target heading lolololol
         f = Float32()
-        print(type(f.data), "    tt    ", type(self.headingTarget))
+        #print(type(f.data), "    tt    ", type(self.headingTarget))
         f.data = float(self.headingTarget)
         self.targetHeading_publisher.publish(f)
 

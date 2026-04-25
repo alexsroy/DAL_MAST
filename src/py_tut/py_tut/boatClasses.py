@@ -5,11 +5,14 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
+from std_msgs.msg import Int32
 from std_msgs.msg import Float32
 from std_msgs.msg import Float32MultiArray
+from rclpy.qos import QoSProfile, DurabilityPolicy
 
 import pygame
 from pygame.locals import *
+import json
 import numpy as np
 import math
 import time
@@ -18,13 +21,14 @@ import random as rnd
 import os
 from ament_index_python.packages import get_package_share_directory
 
-
+qos = QoSProfile(depth=1)
+qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
 
 # If enabled, can control the sailboat with the keyboard
 KEYBOARD_CONTROLS = True
 NAV_ALGORITHM = True
 CREATE_POLAR_PLOT = False
-DRAW_THRUST_VECTOR = False
+DRAW_THRUST_VECTOR = True
 WAYPOINT_HUD_ENABLE = False
 PUBLISH_VALUES = False
 RUN_PHYSICS = True
@@ -34,11 +38,11 @@ pkg_share_dir = get_package_share_directory('py_tut')
 images_dir = os.path.join(pkg_share_dir, 'assets')
 
 # get image paths
-ocean_path = os.path.join(images_dir, 'ocean.jpg')
-wind_path = os.path.join(images_dir, 'arrow.png')
-hull_path = os.path.join(images_dir, 'hull.png')
-sail_path = os.path.join(images_dir, 'sail.png')
-flap_path = os.path.join(images_dir, 'flap.png')
+ocean_path = os.path.join(images_dir, '/workspace/src/py_tut/assets/ocean.jpg')
+wind_path = os.path.join(images_dir, '/workspace/src/py_tut/assets/arrow.png')
+hull_path = os.path.join(images_dir, '/workspace/src/py_tut/assets/hull.png')
+sail_path = os.path.join(images_dir, '/workspace/src/py_tut/assets/sail.png')
+flap_path = os.path.join(images_dir, '/workspace/src/py_tut/assets/flap.png')
 
 # Load image files
 oceanTile = pygame.image.load(ocean_path)
@@ -73,6 +77,8 @@ BLACK = (0, 0, 0)
 # This is the window that we will render to
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Sailboat Sail Visualization")
+pygame.font.init()
+hud_font = pygame.font.SysFont("Arial", 18)
 
 getCourse = 1
 didInit = 0
@@ -146,8 +152,43 @@ class boat:
         self.course = 0
         self.tacking = 0 # 1 if tacking, 0 otherwise
         self.changingTack = 0
+        
+        # Waypoint stuff (saved in pixels here for simplicity)
+        self.waypoints_xy = []
+        self.current_waypoint_index = 0
+        self.current_waypoint_distance = 500
+        self.ref_lat = None
+        self.ref_lon = None
 
+    def gps_to_xy(self, lat, lon):
+        R = 6371000  # earth radius in meters
+
+        lat_rad = math.radians(lat)
+        lon_rad = math.radians(lon)
+        ref_lat_rad = math.radians(self.ref_lat)
+        ref_lon_rad = math.radians(self.ref_lon)
+
+        dlat = lat_rad - ref_lat_rad
+        dlon = lon_rad - ref_lon_rad
+
+        x = dlon * R * math.cos(ref_lat_rad)
+        y = dlat * R
+
+        return x, y
+        
+    def xy_to_gps(self, x, y):
+        R = 6371000  # Earth radius (m)
+
+        ref_lat_rad = math.radians(self.ref_lat)
+
+        lat = self.ref_lat + math.degrees(y / R)
+        lon = self.ref_lon + math.degrees(x / (R * math.cos(ref_lat_rad)))
+
+        return lat, lon
+    
     """These next few functions are used in the physics engine to rotate the components of the boat"""
+    def update_boat_position_from_gps(self, lat, lon):
+        self.x, self.y = self.gps_to_xy(lat, lon)
 
     # Turn the sail X degrees
     def turnSail(self, degs):
@@ -201,6 +242,8 @@ class boat:
         #print(windSailAng, ",", self.flapAng, ",", self.sailAng, ",", self.flapTarget)
 
         # The unit circle has been tricky, everything is working so far, so I won't change this part
+        """This whole time I had an evil hunch that I did something stupid to break the convention that it goes 0 to 360"""
+        """
         if self.sailAng < -180:
             self.sailAng = 180
         elif self.sailAng > 180:
@@ -210,7 +253,10 @@ class boat:
             self.angle = (self.angle - 180) - 180
         if self.angle < -180:
             self.angle = (self.angle + 180) + 180
+        """
 
+        self.angle = self.angle % 360
+        self.sailAng = self.sailAng % 360
 
         # Actuate the flap
         if self.flapDeflection < self.flapTarget:
@@ -260,10 +306,12 @@ class boat:
         # Since when sailing around 25 degrees into the wind, the speed drops off to zero,
         # I'm making the assumption that aerodynamic drag is going to be a constant magnitude of 0.709T
         # Which acts in the direction of the wind, but needs to be projected onto the line of heading
+
+        # NOTE we disabled this for a sec lmao
         drag = 0.709 * thrustFactor * self.maxThrust * math.cos(math.radians(self.angle - windAng)) * min(abs(self.sailAng - windAng) / 12, 1)
 
         """ RAW VALUE FROM MOVELLA"""
-        self.speed = self.thrust - drag
+        self.speed = self.thrust # - drag # <---- uncomment this when done testing
 
         self.sailForwards(self.speed)
 
@@ -326,6 +374,7 @@ def renderBackground(boatX, boatY):
 
     limX = SCREEN_WIDTH / tileWidth + 1
     limY = SCREEN_HEIGHT / tileHeight + 1
+
     i = -1
     while i <= limX:
         j = -1
@@ -334,10 +383,33 @@ def renderBackground(boatX, boatY):
             j += 1
         i += 1
 
-    # Render the waypoint in the ocean
+
+    # Render waypoints
     waypointSurf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-    pygame.draw.circle(waypointSurf, (128, 0, 0), (wp.x - nautono.x + SCREEN_WIDTH // 2, wp.y - nautono.y + SCREEN_HEIGHT // 2), wp.rad)
+
+    for i, wp in enumerate(nautono.waypoints_xy):
+        wp_x, wp_y = wp
+
+        screen_x = wp_x - nautono.x + SCREEN_WIDTH // 2
+        screen_y = wp_y - nautono.y + SCREEN_HEIGHT // 2
+
+        color = (232, 51, 19)
+
+        # highlight current waypoint
+        if i == nautono.current_waypoint_index:
+            color = (52, 235, 94)
+
+        pygame.draw.circle(
+            waypointSurf,
+            color,
+            (int(screen_x), int(screen_y)),
+            25
+        )
+
     screen.blit(waypointSurf, (0, 0))
+    
+    
+
 
 # This function is from: https://stackoverflow.com/questions/4183208/how-do-i-rotate-an-image-around-its-center-using-pygame
 # It rotates the image about originPos (a list with two elements describing point on the image), and draws it at location pos (another list)
@@ -465,6 +537,50 @@ def renderHud(fadeVal):
         pygame.draw.line(hudSurf, (255, 255, 0, fadeVal), (convToHudCords(nautono.track[x - 1][0], 1), convToHudCords(nautono.track[x - 1][1], 0)), (convToHudCords(nautono.track[x][0], 1), convToHudCords(nautono.track[x][1], 0)))
 
     screen.blit(hudSurf, (0, 0))
+    
+def renderWaypointHUD():
+
+    if not WAYPOINT_HUD_ENABLE:
+        return
+
+    if len(nautono.waypoints_xy) == 0:
+        return
+
+    idx = nautono.current_waypoint_index
+
+    if idx >= len(nautono.waypoints_xy):
+        return
+
+    wp_x, wp_y = nautono.waypoints_xy[idx]
+
+    dx = wp_x - nautono.x
+    dy = wp_y - nautono.y
+
+    # distance = math.sqrt(dx*dx + dy*dy)
+    bearing_to_wp = (math.degrees(math.atan2(dy, dx)))
+    if bearing_to_wp < 0:
+        bearing_to_wp = 360 - math.fabs(bearing_to_wp)
+        
+    boat_heading = (math.degrees(nautono.angle))
+    
+    if boat_heading < 0:
+        boat_heading = 360 - math.fabs(boat_heading)
+
+    distanceFromWaypointControl = nautono.current_waypoint_distance
+    
+    lines = [
+        f"Waypoint Index: {idx}",
+        f"Distance: {distanceFromWaypointControl:.1f} m",
+        f"Bearing to WP: {bearing_to_wp:.1f} deg",
+        f"Boat Heading: {boat_heading:.1f} deg",
+    ]
+
+    y = 10
+
+    for line in lines:
+        text_surface = hud_font.render(line, True, (255,255,255))
+        screen.blit(text_surface, (10, y))
+        y += 22
 
 #def calcTriArea(A, B, C): # Input 3 lists of 2 points for each corner in format [x, y]
 #    return abs((B[0] * A[1] - A[0] * B[1]) + (C[0] * B[1] - C[1] * B[0]) + (A[0] * C[1] - A[1] * C[0])) / 2
@@ -521,6 +637,11 @@ class SIM_ROS_HANDLER(Node):
 
         self.bearingAngle_subscriber = self.create_subscription(Float32, 'bearing_angle', self.bearing_angle_callback, 10)
         self.bearing_subscriber = self.create_subscription(Float32MultiArray, 'bearing', self.bearing_callback, 10)
+        
+        self.waypoint_list_subscription = self.create_subscription(String, 'waypoint_list', self.waypoint_list_callback, qos)
+        self.current_waypoint_index_subscription = self.create_subscription(Int32, 'current_waypoint_index', self.waypoint_index_callback, 10)
+        
+        self.waypoint_distance_subscription = self.create_subscription(Float32, 'waypoint_distance', self.waypoint_distance_callback, 10)
 
         timer_period = 0.02  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
@@ -547,7 +668,56 @@ class SIM_ROS_HANDLER(Node):
     def bearing_angle_callback(self, msg):
         global nautono
         nautono.bearingAng = msg.data
+        
+    # change to fit the format of other callbacks once the functionality is confirmed
+    def waypoint_list_callback(self, msg):
+        try:
+            data = json.loads(msg.data)
+        except json.JSONDecodeError:
+            print("Invalid JSON")
+            return
 
+        if "waypoints" not in data:
+            print("No 'waypoints' key in message")
+            return
+
+        gps_waypoints = data["waypoints"]
+        print("Raw GPS waypoints:", gps_waypoints)
+
+        if len(gps_waypoints) == 0:
+            print("Empty waypoint list")
+            return
+
+        nautono.ref_lat = gps_waypoints[0]["latitude"]
+        nautono.ref_lon = gps_waypoints[0]["longitude"]
+        nautono.waypoints_xy = []
+
+        for wp in gps_waypoints:
+            lat = wp["latitude"]
+            lon = wp["longitude"]
+
+            x, y = nautono.gps_to_xy(lat, lon)
+            nautono.waypoints_xy.append((x, y))
+
+        print("Converted XY waypoints:", nautono.waypoints_xy)
+
+        # # Spawn boat near first waypoint
+        # first_wp = nautono.waypoints_xy[0]
+        # nautono.x = first_wp[0] - 100
+        # nautono.y = first_wp[1] - 100
+
+        # print("Boat spawned at:", nautono.x, nautono.y)
+    
+    def waypoint_index_callback(self, msg):
+        global nautono
+        nautono.current_waypoint_index = msg.data
+        print("Current waypoint index:", nautono.current_waypoint_index)
+
+    def waypoint_distance_callback(self, msg):
+        global nautono
+        nautono.current_waypoint_distance = msg.data
+        print("Current waypoint distance", nautono.current_waypoint_distance)
+        
     def timer_callback(self):
         global counter
         global nautono
@@ -560,11 +730,16 @@ class SIM_ROS_HANDLER(Node):
         global TabBlocker
         global settingWP
 
+        if counter % 50 == 0:
+            print("Boat pos:", nautono.x, nautono.y)
+            print("Waypoints XY:", nautono.waypoints_xy)
         # Get mouse position to set wind direction
         mouse_x, mouse_y = pygame.mouse.get_pos()
 
         # Wind comes from the mouse towards the centre of the screen, store it as an angle
-        wind_direction = math.atan2(mouse_y - SCREEN_HEIGHT // 2, mouse_x - SCREEN_WIDTH // 2)
+        # wind_direction = math.atan2(mouse_y - SCREEN_HEIGHT // 2, mouse_x - SCREEN_WIDTH // 2)
+        # TODO
+        wind_direction = math.radians(10)
 
         # If the right mouse button is released, snap the boat to point to that direction
         for event in pygame.event.get():
@@ -626,8 +801,6 @@ class SIM_ROS_HANDLER(Node):
             if keys[pygame.K_t]:
                 nautono.addTrack()
 
-        wind_direction = math.radians(10)
-
         # Run all the physics
         #if not counter:
         #    nautono.getBearing(math.degrees(wind_direction), wp)
@@ -641,6 +814,7 @@ class SIM_ROS_HANDLER(Node):
         nautono.renderBoat()
 
         if WAYPOINT_HUD_ENABLE:
+            renderWaypointHUD()
             if hudState == 1 and opacity < 255: # Isn't it funny that for an engineering demonstrater I added a fade effect to the hud?
                 opacity += 1
 
@@ -653,7 +827,7 @@ class SIM_ROS_HANDLER(Node):
             elif hudState == -1 and opacity == 0:
                 hudState = 0
 
-            renderHud(opacity)
+            #renderHud(opacity)
 
             if counter % 250 == 1:
                 nautono.addTrack()
@@ -673,21 +847,26 @@ class SIM_ROS_HANDLER(Node):
             f.data = float(nautono.rudderDeflection)
             self.rudderAngle_publisher.publish(f)
 
-            f.data = float(nautono.x)
-            self.longitude_publisher.publish(f)
-            f.data = float(nautono.y)
-            self.latitude_publisher.publish(f)
+            # Convert sim XY → GPS
+            if nautono.ref_lat is not None and nautono.ref_lon is not None:
+                lat, lon = nautono.xy_to_gps(nautono.x, nautono.y)
+
+                f.data = float(lat)
+                self.latitude_publisher.publish(f)
+
+                f.data = float(lon)
+                self.longitude_publisher.publish(f)
 
             f.data = float(wp.x)
             self.waypoint_longitude_publisher.publish(f)
             f.data = float(wp.y)
             self.waypoint_latitude_publisher.publish(f)
+        
 
         #f.data = float(math.degrees(nautono.course)) # This will have to remain in the nav algorithm
         #self.targetHeading_publisher.publish(f)
 
-        print(nautono.rudderDeflection)
-
+        #print(nautono.rudderDeflection)
         # Update the display
         pygame.display.flip()
         counter += 1
@@ -707,8 +886,13 @@ def main(args=None):
     rclpy.init(args=args)
 
     sailboat_sim = SIM_ROS_HANDLER()
+    clock = pygame.time.Clock()
 
-    rclpy.spin(sailboat_sim)
+    while rclpy.ok():
+        rclpy.spin_once(sailboat_sim, timeout_sec=0.0)
+        
+        # Limit to 50 FPS (IMPORTANT)
+        clock.tick(50)
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
