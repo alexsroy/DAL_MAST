@@ -2,7 +2,7 @@ import rclpy
 
 from rclpy.node import Node
 
-from std_msgs.msg import Float32
+from std_msgs.msg import Bool, Float32
 
 maxFlapDeflection = 45
 thrust_sail_offset = 57         #this
@@ -28,7 +28,7 @@ class controlConfigurationService(Node):
         self.windVane_subscription = self.create_subscription(Float32, 'wind_direction', self.wind_callback, 10)
         self.compass_subscription = self.create_subscription(Float32, 'heading_direction', self.compass_callback, 10)
         self.targetHeading_subscription = self.create_subscription(Float32, 'heading_target_direction', self.heading_target_callback, 10)
-        self.following_subscription = self.create_subscription(bool, 'following', self.following_callback, 10) 
+        self.following_subscription = self.create_subscription(Bool, 'following', self.following_callback, 10)
 
         # The inputs and outputs for this node
         self.sailAngle_subscription = self.create_subscription(Float32, 'sail_angle', self.sail_callback, 10)
@@ -109,7 +109,7 @@ class controlConfigurationService(Node):
 
         """
         # Sailing into the wind
-        if (self.windAngle >= 0 and self.windAngle >= 0) or (self.windAngle <= 0 and self.windAngle <= 0):
+        if (self.windAngle >= 0 and self.heading >= 0) or (self.windAngle <= 0 and self.heading <= 0):
             if self.windAngle - self.heading > 20:
                 flapTarget = maxFlapDeflection
 
