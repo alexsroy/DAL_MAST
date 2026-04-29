@@ -111,6 +111,18 @@ class PCBReadWrite(Node):
                         s = String()
                         s.data = self.PCBStr
                         self.waypointCmd_publisher.publish(s)
+                        
+# =========
+# leftover changes from merge - luca will consult alex
+# =========
+#                 f.data = float(DICT["latitude"])
+#                 self.latitude_publisher.publish(f)
+#
+#             waypoint_commands = ["add", "remove", "startFollowing", "stopFollowing", "setCurrentWaypoint", "refreshWaypoints"]
+#             if any(cmd in self.PCBStr for cmd in waypoint_commands):
+#                 msg = String()
+#                 msg.data = self.PCBStr
+#                 self.waypointCmd_publisher.publish(msg)
 
     # Update the motors when we hear something from other ROS nodes
     def sail_target_callback(self, msg):

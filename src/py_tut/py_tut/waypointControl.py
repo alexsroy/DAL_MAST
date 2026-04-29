@@ -14,8 +14,8 @@ from std_msgs.msg import Bool
 import json
 
 
-GATE_WIDTH_METERS = 10
-
+GATE_WIDTH_METERS = 200
+FOLLOWING_ENABLED = True
 
 class waypointControl(Node):
     def __init__(self, waypoints):
@@ -42,8 +42,9 @@ class waypointControl(Node):
         self.max_laps = 1
         self.current_leg = 0
         self.lap_count = 0
-        self.following_enabled = False
-        self.race_started = False
+        self.following_enabled = FOLLOWING_ENABLED  #this can also be set by sending startFollowing         
+                                                    #or stopFollowing as a waypointCommand
+        self.race_started = False 
         self.race_complete = False
         self._was_inside_gate = False
         
@@ -63,12 +64,21 @@ class waypointControl(Node):
         self.navigationTimer = self.create_timer(0.1, self.waypoint_radius_callback)
         
         self.waypoint_list_publisher = self.create_publisher(String, 'waypoint_list', 10)
+        self.waypoint_list_timer = self.create_timer(1.0, self.publish_waypoint_list)
         self.current_waypoint_index_publisher = self.create_publisher(Int32, 'current_waypoint_index', 10)
+        
+        self.waypoint_distance_publisher = self.create_publisher(Float32, 'waypoint_distance', 10)
         
         # Following waypoint command
         self.following_enabled_publisher = self.create_publisher(Bool, 'following', 10)
 
         self.bearingAngle = 0
+        self.publish_waypoint_list()
+        msg = Bool()
+        msg.data = self.following_enabled
+        self.following_enabled_publisher.publish(msg)
+        self._advance_leg()
+        
 
     def publish_waypoint_list(self):
         msg = String()
@@ -199,6 +209,10 @@ class waypointControl(Node):
         boat_pos = (self.latitude, self.longitude)
 
         triggered = self.update(boat_pos)
+        _, distance = self.point_in_gate(boat_pos)
+        dist_msg = Float32()
+        dist_msg.data = float(distance)
+        self.waypoint_distance_publisher.publish(dist_msg)
 
         if triggered:
             print("Entered waypoint gate")
@@ -350,7 +364,7 @@ def main(args=None):
     D = (44.615673, -63.557152)
 
 
-    waypoints = []
+    waypoints = [A, B, C, D]
 
     rclpy.init(args=args)
 
