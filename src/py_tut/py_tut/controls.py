@@ -2,6 +2,7 @@ import rclpy
 
 from rclpy.node import Node
 
+
 from std_msgs.msg import Bool, Float32
 
 maxFlapDeflection = 45
@@ -28,6 +29,7 @@ class controlConfigurationService(Node):
         self.windVane_subscription = self.create_subscription(Float32, 'wind_direction', self.wind_callback, 10)
         self.compass_subscription = self.create_subscription(Float32, 'heading_direction', self.compass_callback, 10)
         self.targetHeading_subscription = self.create_subscription(Float32, 'heading_target_direction', self.heading_target_callback, 10)
+
         self.following_subscription = self.create_subscription(Bool, 'following', self.following_callback, 10)
 
         # The inputs and outputs for this node
@@ -46,7 +48,7 @@ class controlConfigurationService(Node):
         self.flapAngle = float(0)
         self.rudderAngle = float(0)
         self.targetHeading = float(0)
-        self.following = False
+        self.following = True
 
         # Publication rates
         rates = [0.1, 0.1, 0.2]
@@ -76,27 +78,30 @@ class controlConfigurationService(Node):
 
     def following_callback(self, msg):                    #this
         self.following = msg.data
-    
+
 
 
     # These are the callbacks that run on a timer to update the published targets
     def sail_pub_callback(self): 
         msg = Float32()
 
-# possible thrust vectors
+        # possible thrust vectors
         t1 = (self.windAngle + angle_of_attack + thrust_sail_offset) % 360
-        Heading_to_t1 = shortestAngle(t1, self.targetHeading)
+        Heading_to_t1 = shortestAngle(t1, (self.targetHeading - self.heading) % 360)
 
         t2 = (self.windAngle - angle_of_attack - thrust_sail_offset) % 360
-        Heading_to_t2 = shortestAngle(t2, self.targetHeading)
+        Heading_to_t2 = shortestAngle(t2, (self.targetHeading - self.heading) % 360)
 
-#logic using existing shortest angle function
+        #logic using existing shortest angle function
         if self.following:
             if abs(Heading_to_t1) <= abs(Heading_to_t2):
                 msg.data = float((self.windAngle + angle_of_attack) % 360)
             else:
                 msg.data = float((self.windAngle - angle_of_attack) % 360)
 
+
+
+        print("Targ Sail Angle: ", msg.data, " wind ang: ", self.windAngle)
         self.targetSailAngle_publisher.publish(msg) #publish 
 
     def flap_pub_callback(self):
@@ -144,7 +149,7 @@ class controlConfigurationService(Node):
         #global wp
         #if ((self.x - wp.x) ** 2 + (self.y - wp.y) ** 2) ** 0.5 < wp.rad:
         #    self.flapTarget = 0
-        msg.data = float(flapTarget)
+        #msg.data = float(flapTarget)
 
         #NOTE: TEMPORARILY DISABLED
         #self.targetFlapAngle_publisher.publish(msg)
@@ -157,14 +162,15 @@ class controlConfigurationService(Node):
         print(shortestAngle(self.heading, self.targetHeading))
 
         if shortestAngle(self.heading, self.targetHeading) < 0:
-            rudderTarget = max(shortestAngle(self.heading, self.targetHeading), -45)
+            rudderTarget = max(shortestAngle(self.heading, self.targetHeading) / 2, -45)
 
+            print("top statement: ", max(shortestAngle(self.heading, self.targetHeading) / 2, -45))
 
         else:
             rudderTarget = min(shortestAngle(self.heading, self.targetHeading) / 2, 45)
+            print("bottom statement: ", min(shortestAngle(self.heading, self.targetHeading) / 2, 45))
 
-
-        print(rudderTarget, " rrR")
+        #print(rudderTarget, " rrR")
 
         msg.data = float(rudderTarget)
         self.targetRudderAngle_publisher.publish(msg)

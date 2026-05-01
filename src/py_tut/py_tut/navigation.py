@@ -113,7 +113,7 @@ class navigationNode(Node):
             return
 
         # Get bearing
-        self.bearingAngle = math.degrees(math.atan2(self.waypointLatitude - self.prevWaypointLatitude, self.waypointLongitude - self.prevWaypointLongitude))
+        self.bearingAngle = math.degrees(math.atan2(self.waypointLatitude - self.prevWaypointLatitude, self.waypointLongitude - self.prevWaypointLongitude)) % 360
         self.bearing = [(self.prevWaypointLongitude - BBReverseSpace * math.cos(math.radians(self.bearingAngle)), self.prevWaypointLatitude - BBReverseSpace * math.sin(math.radians(self.bearingAngle))), (self.waypointLongitude, self.waypointLatitude)]
 
         f = Float32()

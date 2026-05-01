@@ -83,6 +83,18 @@ didInit = 0
 
 counter = 0
 
+def shortestAngle(referenceAngle, targetAngle):
+    returnAngle = referenceAngle - targetAngle
+
+    if returnAngle < -180:
+        returnAngle = 360 - (targetAngle - referenceAngle)
+
+    if returnAngle > 180:
+        returnAngle = (360 - (referenceAngle - targetAngle)) * -1
+
+    return returnAngle
+
+
 class waypoint:
     def __init__(self, x, y, radius):
         self.x = x
@@ -216,7 +228,7 @@ class boat:
     """For calculations only use degrees, so use these are helper functions at the start and end of the physics frame to convert relevant variables"""
     def convertToRads(self):
         self.angle = math.radians(self.angle)
-        self.sailAng = self.heading = math.radians(self.sailAng)
+        self.sailAng = math.radians(self.sailAng)
         self.flapAng = math.radians(self.flapAng)
         self.rudderAng = math.radians(self.rudderAng)
         self.angleOfThrust = math.radians(self.angleOfThrust)
@@ -274,10 +286,23 @@ class boat:
         self.rudderAng = self.rudderDeflection + self.angle
 
         # Turn sail based on the geometry of the sail + flap
-        rotateFactor = 0.02 # Magic number
+        rotateFactor = 1 # Magic number
         # Eqn. 1
         """ THIS IS FOR A FREELY ROTATING SAIL, MOVE TO CONTROLS AND MAKE MOTORIZED  """
-        self.turnSail(rotateFactor * (self.sailLen * math.sin(math.radians(windSailAng)) + self.flapLen * math.sin(math.radians(windSailAng + self.flapDeflection))))
+        #self.turnSail(rotateFactor * (self.sailLen * math.sin(math.radians(windSailAng)) + self.flapLen * math.sin(math.radians(windSailAng + self.flapDeflection))))
+        #print(self.sailTarget, self.sailAng, sep="====")
+
+        relativeSailAngle = ((self.sailAng + 180 ) % 360 - self.angle) % 360
+
+        print("sail targ", self.sailTarget, " sail ang ", self.sailAng, " rel sail angle ", relativeSailAngle)
+
+        if shortestAngle(self.sailTarget, relativeSailAngle) > 0:
+            tempDir = 1
+        else:
+            tempDir = -1
+
+        self.turnSail(rotateFactor * tempDir)
+
 
         # The next section converts the thrust vector to forwards motion
 
@@ -317,6 +342,8 @@ class boat:
         manouveringFactor = 10
         # Eqn. 3
         self.rotateBoat(manouveringFactor * (-1 * self.thrust * self.rudderLen * math.sin(math.radians(self.rudderDeflection))))
+        print("ROTATING BOAT: ", manouveringFactor * (-1 * self.thrust * self.rudderLen * math.sin(math.radians(self.rudderDeflection))))
+
 
         self.convertToRads()
 
@@ -929,7 +956,10 @@ class SIM_ROS_HANDLER(Node):
         f = Float32()
 
         if PUBLISH_VALUES:
-            f.data = math.degrees(wind_direction)
+            f.data = (math.degrees(wind_direction) - math.degrees(nautono.angle)) % 360
+
+            #print(wind_direction, "  gt  ", nautono.angle)
+
             self.windVane_publisher.publish(f)
             f.data = math.degrees(nautono.angle)
             self.compass_publisher.publish(f)
