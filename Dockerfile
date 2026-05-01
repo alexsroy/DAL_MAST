@@ -9,6 +9,12 @@ RUN apt-get update && apt-get install -y \
     ros-jazzy-turtlesim \
     glpk-utils \
     nano \
+    ros-jazzy-xacro \
+    ros-jazzy-robot-state-publisher \
+    libudev-dev \
+    ros-jazzy-nmea-msgs \
+    ros-jazzy-nmea-msgs \
+    ros-jazzy-mavros-msgs \
     && rm -rf /var/lib/apt/lists/*
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
