@@ -13,7 +13,7 @@ setup(
             ['resource/' + package_name]),
         (os.path.join('share', package_name, 'assets'),
          glob('assets/*')),
-        ('share/' + package_name, ['package.xml', 'navigationTemplate.mod']),
+        ('share/' + package_name, ['package.xml', 'py_tut/navigationTemplate.mod']),
         (os.path.join('share', 'py_tut', 'launch'),
         glob('launch/*.xml')),
     ],

@@ -8,7 +8,6 @@ from std_msgs.msg import String
 from std_msgs.msg import Int32
 from std_msgs.msg import Float32
 from std_msgs.msg import Float32MultiArray
-from rclpy.qos import QoSProfile, DurabilityPolicy
 
 import pygame
 from pygame.locals import *
@@ -21,16 +20,15 @@ import random as rnd
 import os
 from ament_index_python.packages import get_package_share_directory
 
-qos = QoSProfile(depth=1)
-qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
+
 
 # If enabled, can control the sailboat with the keyboard
 KEYBOARD_CONTROLS = True
 NAV_ALGORITHM = True
 CREATE_POLAR_PLOT = False
 DRAW_THRUST_VECTOR = True
-WAYPOINT_HUD_ENABLE = False
-PUBLISH_VALUES = False
+WAYPOINT_HUD_ENABLE = True
+PUBLISH_VALUES = True
 RUN_PHYSICS = True
 
 # use share dir to get assets
@@ -102,8 +100,8 @@ class boat:
     # If a variable has 'length' in its name, IT IS NOT the graphical size of the boat, it is a dummy variable for calculation
     def __init__(self):
         # Hull parameters
-        self.x = 400 # SCREEN_WIDTH // 2
-        self.y = 2000 # SCREEN_HEIGHT // 2
+        self.x = 20 # SCREEN_WIDTH // 2
+        self.y = 0 # SCREEN_HEIGHT // 2
         self.length = 40
         self.width = 20
         self.angle = 0  # (rads)
@@ -156,7 +154,7 @@ class boat:
         # Waypoint stuff (saved in pixels here for simplicity)
         self.waypoints_xy = []
         self.current_waypoint_index = 0
-        self.current_waypoint_distance = 500
+        self.current_waypoint_distance = 999 # 999 is arbitrary #sorry
         self.ref_lat = None
         self.ref_lon = None
 
@@ -311,7 +309,7 @@ class boat:
         drag = 0.709 * thrustFactor * self.maxThrust * math.cos(math.radians(self.angle - windAng)) * min(abs(self.sailAng - windAng) / 12, 1)
 
         """ RAW VALUE FROM MOVELLA"""
-        self.speed = self.thrust # - drag # <---- uncomment this when done testing
+        self.speed = self.thrust - drag
 
         self.sailForwards(self.speed)
 
@@ -474,68 +472,127 @@ def createPolarPlot(boat, waypoint):
     fig.show()
 
 def convToHudCords(num, isX):
+    # Legacy function kept for any other callers — uses old absolute transform
     return num / 10 + isX * 150 + (1 - isX) * 50
 
+# Minimap layout constants
+HUD_X = 150       # left edge of the minimap rect
+HUD_Y = 50        # top edge
+HUD_W = 500       # width
+HUD_H = 500       # height
+HUD_SCALE = 0.05  # world units per minimap pixel
+
+def worldToHud(wx, wy):
+    """Convert absolute world XY to minimap screen coords, centered on the boat."""
+    cx = HUD_X + HUD_W // 2 + (wx - nautono.x) * HUD_SCALE
+    cy = HUD_Y + HUD_H // 2 + (wy - nautono.y) * HUD_SCALE
+    return int(cx), int(cy)
+
 def renderHud(fadeVal):
-    """ Render a minimap at 1/10th scale """
+    if fadeVal > 255:
+        fadeVal = 255
+
+    """ Render a minimap centered on the boat at HUD_SCALE """
     global nautono
-    global wp
-    global wind_direction
     global screen
     hudSurf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
 
-    HUDX = 150
-    HUDY = 50
+    # Brown border, then blue ocean rect
+    pygame.draw.rect(hudSurf, (128, 66, 0, fadeVal),  Rect(HUD_X - 10, HUD_Y - 10, HUD_W + 20, HUD_H + 20))
+    pygame.draw.rect(hudSurf, (0, 75, 150, fadeVal),  Rect(HUD_X,      HUD_Y,      HUD_W,      HUD_H))
 
-    # Render brown boarder 10px larger than the ocean inside
-    boarder = Rect(HUDX - 10, HUDY - 10, 520, 520)
-    pygame.draw.rect(hudSurf, (128, 66, 0, fadeVal), boarder)
+    # Clip everything we draw to the ocean rect so things don't spill outside
+    hudSurf.set_clip(Rect(HUD_X, HUD_Y, HUD_W, HUD_H))
 
-    # Render blue rectangle at 150, 50 inside the boarder rect
-    ocean = Rect(HUDX, HUDY, 500, 500)
-    pygame.draw.rect(hudSurf, (0, 75, 150, fadeVal), ocean)
+    bearingAng = math.radians(nautono.bearingAng)
 
-    # Draw manouving out of bounds
-    # I might want to lock the bearing angle to 0 to +/- 90, and flip the APlus and AMinus calculations if bearingAng 180 < x < 90 or -180 < x < -90
-    bearingAng = math.radians(nautono.bearingAng) #math.radians(90 - 180 - math.degrees(math.atan2(nautono.bearing[0][0] - nautono.bearing[1][0], nautono.bearing[0][1] - nautono.bearing[1][1])))
+    # --- Bounding box ---
+    # Recompute from world-space waypoints directly rather than using nautono.bearing,
+    # which arrives from navigation.py in GPS lat/lon space and can't be used as XY.
+    # prev WP → current WP defines the corridor axis.
+    idx = nautono.current_waypoint_index
+    if nautono.waypoints_xy and idx < len(nautono.waypoints_xy):
+        cur_wp  = nautono.waypoints_xy[idx]
+        prev_wp = nautono.waypoints_xy[max(0, idx - 1)]
 
-    UPlus = [D/15 * math.cos(bearingAng + math.radians(90)) + convToHudCords(nautono.bearing[0][0], 1), D/15 * math.sin(bearingAng + math.radians(90)) + convToHudCords(nautono.bearing[0][1], 0)]
-    UMinus = [D/15 * math.cos(bearingAng + math.radians(90)) + convToHudCords(nautono.bearing[1][0], 1), D/15 * math.sin(bearingAng + math.radians(90)) + convToHudCords(nautono.bearing[1][1], 0)]
-    VPlus = [D/15 * math.cos(bearingAng - math.radians(90)) + convToHudCords(nautono.bearing[0][0], 1), D/15 * math.sin(bearingAng - math.radians(90)) + convToHudCords(nautono.bearing[0][1], 0)]
-    VMinus = [D/15 * math.cos(bearingAng - math.radians(90)) + convToHudCords(nautono.bearing[1][0], 1), D/15 * math.sin(bearingAng - math.radians(90)) + convToHudCords(nautono.bearing[1][1], 0)]
-    RB = [UPlus, VPlus, VMinus, UMinus]
-    pygame.draw.polygon(hudSurf, (200, 100, 150, fadeVal), RB)
+        # Recompute bearingAng from actual world-space positions so it matches the geometry
+        dx = cur_wp[0] - prev_wp[0]
+        dy = cur_wp[1] - prev_wp[1]
+        if abs(dx) > 0.001 or abs(dy) > 0.001:
+            bearingAng = math.atan2(dy, dx)
 
-    # These are the initial offsets from the bearing
-    APlus = [D/20 * math.cos(bearingAng + math.radians(90)) + convToHudCords(nautono.bearing[0][0], 1), D/20 * math.sin(bearingAng + math.radians(90)) + convToHudCords(nautono.bearing[0][1], 0)]
-    AMinus = [D/20 * math.cos(bearingAng + math.radians(90)) + convToHudCords(nautono.bearing[1][0], 1), D/20 * math.sin(bearingAng + math.radians(90)) + convToHudCords(nautono.bearing[1][1], 0)]
-    BPlus = [D/20 * math.cos(bearingAng - math.radians(90)) + convToHudCords(nautono.bearing[0][0], 1), D/20 * math.sin(bearingAng - math.radians(90)) + convToHudCords(nautono.bearing[0][1], 0)]
-    BMinus = [D/20 * math.cos(bearingAng - math.radians(90)) + convToHudCords(nautono.bearing[1][0], 1), D/20 * math.sin(bearingAng - math.radians(90)) + convToHudCords(nautono.bearing[1][1], 0)]
+        # b0 = start of corridor (slightly behind prev WP), b1 = current target WP
+        BBReverseSpace = 50  # world units to extend corridor behind prev WP
+        b0x = prev_wp[0] - BBReverseSpace * math.cos(bearingAng)
+        b0y = prev_wp[1] - BBReverseSpace * math.sin(bearingAng)
+        b1x = cur_wp[0]
+        b1y = cur_wp[1]
 
-    BB = [APlus, BPlus, BMinus, AMinus]
+        def bbPoly(half_width):
+            cos90 = math.cos(bearingAng + math.radians(90))
+            sin90 = math.sin(bearingAng + math.radians(90))
+            return [
+                worldToHud(b0x + half_width * cos90, b0y + half_width * sin90),
+                worldToHud(b0x - half_width * cos90, b0y - half_width * sin90),
+                worldToHud(b1x - half_width * cos90, b1y - half_width * sin90),
+                worldToHud(b1x + half_width * cos90, b1y + half_width * sin90),
+            ]
 
-    pygame.draw.polygon(hudSurf, (0, 100, 200, fadeVal), BB)
+        pygame.draw.polygon(hudSurf, (200, 100, 150, fadeVal), bbPoly(D * 2 / 3))  # outer / manouvering box
+        pygame.draw.polygon(hudSurf, (0, 100, 200, fadeVal),   bbPoly(D / 2))       # inner / sailing corridor
 
-    # Draw the waypoint
-    pygame.draw.circle(hudSurf, (128, 0, 0, fadeVal), (wp.x / 10 + 150, wp.y / 10 + 50), wp.rad / 10)
+        # Bearing line prev WP → current WP
+        pygame.draw.line(hudSurf, (255, 255, 255, fadeVal),
+                         worldToHud(prev_wp[0], prev_wp[1]),
+                         worldToHud(cur_wp[0],  cur_wp[1]), 1)
 
-    # Draw the boat
-    boat_length = 10
-    boat_width = 5
-    nose = (nautono.x / 10 + boat_length * math.cos(nautono.angle) + 150, nautono.y / 10 + boat_length * math.sin(nautono.angle) + 50),
-    port = (nautono.x / 10 + (boat_width / 2) * math.cos(nautono.angle - math.radians(90)) + 150, 50 + nautono.y / 10 + (boat_width / 2) * math.sin(nautono.angle - math.radians(90))),
-    starboard = (nautono.x / 10 + (boat_width / 2) * math.cos(nautono.angle + math.radians(90)) + 150, 50 + nautono.y / 10 + (boat_width / 2) * math.sin(nautono.angle + math.radians(90)))
+    # --- Waypoints ---
+    # Green = current target, red = future, grey = already passed
+    wpt_screen_pts = []
+    for i, (wpt_x, wpt_y) in enumerate(nautono.waypoints_xy):
+        hx, hy = worldToHud(wpt_x, wpt_y)
+        wpt_screen_pts.append((hx, hy))
+        if i < nautono.current_waypoint_index:
+            color = (100, 100, 100, fadeVal)
+        elif i == nautono.current_waypoint_index:
+            color = (52, 235, 94, fadeVal)
+        else:
+            color = (232, 51, 19, fadeVal)
+        pygame.draw.circle(hudSurf, color, (hx, hy), 6)
+        label = hud_font.render(str(i), True, (255, 255, 255))
+        label.set_alpha(fadeVal)
+        hudSurf.blit(label, (hx + 7, hy - 7))
+    if len(wpt_screen_pts) >= 2:
+        pygame.draw.lines(hudSurf, (200, 200, 200, min(fadeVal, 180)), False, wpt_screen_pts, 1)
 
-    pygame.draw.polygon(hudSurf, (0, 0, 0, fadeVal), (nose, port, starboard))
+    # --- Boat triangle ---
+    boat_length = 8   # minimap pixels, not world units
+    boat_width  = 4
+    nose      = worldToHud(nautono.x + boat_length / HUD_SCALE * math.cos(nautono.angle),
+                            nautono.y + boat_length / HUD_SCALE * math.sin(nautono.angle))
+    port      = worldToHud(nautono.x + (boat_width / 2) / HUD_SCALE * math.cos(nautono.angle - math.radians(90)),
+                            nautono.y + (boat_width / 2) / HUD_SCALE * math.sin(nautono.angle - math.radians(90)))
+    starboard = worldToHud(nautono.x + (boat_width / 2) / HUD_SCALE * math.cos(nautono.angle + math.radians(90)),
+                            nautono.y + (boat_width / 2) / HUD_SCALE * math.sin(nautono.angle + math.radians(90)))
+    pygame.draw.polygon(hudSurf, (255, 255, 0, fadeVal), (nose, port, starboard))
 
-    # Draw Bearing
-    pygame.draw.line(hudSurf, (0, 0, 0, fadeVal), (nautono.bearing[0][0] / 10 + 150, nautono.bearing[0][1] / 10 + 50), (nautono.bearing[1][0] / 10 + 150, nautono.bearing[1][1] / 10 + 50), 1)
+    # (bearing line is now drawn above, directly from world-space waypoints)
 
-    for x in range(1, len(nautono.track)):
+    # --- Track ---
+    for i in range(1, len(nautono.track)):
         if len(nautono.track) < 2:
             break
-        pygame.draw.line(hudSurf, (255, 255, 0, fadeVal), (convToHudCords(nautono.track[x - 1][0], 1), convToHudCords(nautono.track[x - 1][1], 0)), (convToHudCords(nautono.track[x][0], 1), convToHudCords(nautono.track[x][1], 0)))
+        pygame.draw.line(hudSurf, (255, 255, 0, fadeVal),
+                         worldToHud(nautono.track[i-1][0], nautono.track[i-1][1]),
+                         worldToHud(nautono.track[i][0],   nautono.track[i][1]))
 
+    # --- Centre crosshair so you know where the boat is ---
+    cx = HUD_X + HUD_W // 2
+    cy = HUD_Y + HUD_H // 2
+    pygame.draw.line(hudSurf, (255, 255, 255, fadeVal // 2), (cx - 6, cy), (cx + 6, cy), 1)
+    pygame.draw.line(hudSurf, (255, 255, 255, fadeVal // 2), (cx, cy - 6), (cx, cy + 6), 1)
+
+    hudSurf.set_clip(None)
     screen.blit(hudSurf, (0, 0))
     
 def renderWaypointHUD():
@@ -564,7 +621,7 @@ def renderWaypointHUD():
     boat_heading = (math.degrees(nautono.angle))
     
     if boat_heading < 0:
-        boat_heading = 360 - math.fabs(boat_heading)
+        boat_heading = 360 - math.fabs(boat_heading)       
 
     distanceFromWaypointControl = nautono.current_waypoint_distance
     
@@ -611,6 +668,7 @@ TabBlocker = time.time()
 hudState = 0
 opacity = 0
 settingWP = False
+showDebugMap = False  # M key toggles instant minimap overlay
 
 
 class SIM_ROS_HANDLER(Node):
@@ -626,6 +684,9 @@ class SIM_ROS_HANDLER(Node):
         self.longitude_publisher = self.create_publisher(Float32, 'longitude', 10)
         self.waypoint_latitude_publisher = self.create_publisher(Float32, 'waypoint_latitude', 10)
         self.waypoint_longitude_publisher = self.create_publisher(Float32, 'waypoint_longitude', 10)
+        # Publishers for the previous waypoint so navigation.py can compute the bearing corridor
+        self.prev_waypoint_latitude_publisher = self.create_publisher(Float32, 'previous_waypoint_latitude', 10)
+        self.prev_waypoint_longitude_publisher = self.create_publisher(Float32, 'previous_waypoint_longitude', 10)
 
         self.sailAngle_publisher = self.create_publisher(Float32, 'sail_angle', 10)
         self.flapAngle_publisher = self.create_publisher(Float32, 'flap_angle', 10)
@@ -638,7 +699,8 @@ class SIM_ROS_HANDLER(Node):
         self.bearingAngle_subscriber = self.create_subscription(Float32, 'bearing_angle', self.bearing_angle_callback, 10)
         self.bearing_subscriber = self.create_subscription(Float32MultiArray, 'bearing', self.bearing_callback, 10)
         
-        self.waypoint_list_subscription = self.create_subscription(String, 'waypoint_list', self.waypoint_list_callback, qos)
+        self.waypoint_list_subscription = self.create_subscription(String, 'waypoint_list', self.waypoint_list_callback, 10)
+        #self.waypoint_list_publisher = self.create_subscription(String, 'waypoint_list', self.waypoint_list_callback, 10)
         self.current_waypoint_index_subscription = self.create_subscription(Int32, 'current_waypoint_index', self.waypoint_index_callback, 10)
         
         self.waypoint_distance_subscription = self.create_subscription(Float32, 'waypoint_distance', self.waypoint_distance_callback, 10)
@@ -671,6 +733,7 @@ class SIM_ROS_HANDLER(Node):
         
     # change to fit the format of other callbacks once the functionality is confirmed
     def waypoint_list_callback(self, msg):
+        print('in waypoint_list callback')
         try:
             data = json.loads(msg.data)
         except json.JSONDecodeError:
@@ -700,13 +763,9 @@ class SIM_ROS_HANDLER(Node):
             nautono.waypoints_xy.append((x, y))
 
         print("Converted XY waypoints:", nautono.waypoints_xy)
+        print("Boat spawned at:", nautono.x, nautono.y)
+        
 
-        # # Spawn boat near first waypoint
-        # first_wp = nautono.waypoints_xy[0]
-        # nautono.x = first_wp[0] - 100
-        # nautono.y = first_wp[1] - 100
-
-        # print("Boat spawned at:", nautono.x, nautono.y)
     
     def waypoint_index_callback(self, msg):
         global nautono
@@ -729,6 +788,7 @@ class SIM_ROS_HANDLER(Node):
         global ADBlockingTimer
         global TabBlocker
         global settingWP
+        global showDebugMap
 
         if counter % 50 == 0:
             print("Boat pos:", nautono.x, nautono.y)
@@ -746,14 +806,15 @@ class SIM_ROS_HANDLER(Node):
             if event.type == pygame.QUIT:
                 running = False
 
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and hudState == 2:
-                settingWP = True
-
-            elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and settingWP:
-                settingWP = False
-                wp.x = (mouse_x - 150) * 10
-                wp.y = (mouse_y - 50) * 10
-                getCourse = 1
+            # DISABLED: click-to-set-waypoint on the minimap HUD has been removed.
+            # Waypoints now come exclusively from the waypoint_list ROS topic.
+            # elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and hudState == 2:
+            #     settingWP = True
+            # elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and settingWP:
+            #     settingWP = False
+            #     wp.x = (mouse_x - 150) * 10
+            #     wp.y = (mouse_y - 50) * 10
+            #     getCourse = 1
 
             # These two rotate the boat on mouse right click
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:  # Right-click
@@ -801,6 +862,34 @@ class SIM_ROS_HANDLER(Node):
             if keys[pygame.K_t]:
                 nautono.addTrack()
 
+            if keys[pygame.K_m] and time.time() - TabBlocker > 0.2:  # M = instant minimap toggle
+                showDebugMap = not showDebugMap
+                TabBlocker = time.time()
+                
+            # DISABLED: K_u was broken (incomplete expression). Removing to prevent syntax error.
+            # if keys[pygame.K_u]:
+            #     wp.x = nautono.???
+            #     wp.y = (mouse_y - 50) * 10
+            #     getCourse = 1
+                
+            if keys[pygame.K_1]:
+                if nautono.waypoints_xy:
+                    teleportToX, teleportToY  = nautono.waypoints_xy[0]
+                    teleportToX  += 10
+                    teleportToY += 250
+                    nautono.x = teleportToX
+                    nautono.y = teleportToY
+                    print('teleported to first waypoint')
+                    
+            if keys[pygame.K_2]:
+                if len(nautono.waypoints_xy) >= 2:
+                    teleportToX, teleportToY  = nautono.waypoints_xy[1]
+                    teleportToX += 150
+                    teleportToY += 100
+                    nautono.x = teleportToX
+                    nautono.y = teleportToY
+                    print('teleported to second waypoint')
+
         # Run all the physics
         #if not counter:
         #    nautono.getBearing(math.degrees(wind_direction), wp)
@@ -813,21 +902,25 @@ class SIM_ROS_HANDLER(Node):
         renderWindVane(math.degrees(wind_direction))
         nautono.renderBoat()
 
-        if WAYPOINT_HUD_ENABLE:
-            renderWaypointHUD()
-            if hudState == 1 and opacity < 255: # Isn't it funny that for an engineering demonstrater I added a fade effect to the hud?
-                opacity += 1
+        # M key: instant full-opacity minimap, independent of the TAB fade state machine
+        if showDebugMap:
+            renderHud(220)
 
-            elif hudState == 1 and opacity == 255:
+        if WAYPOINT_HUD_ENABLE:
+            if hudState == 1 and opacity < 255: # Isn't it funny that for an engineering demonstrater I added a fade effect to the hud?
+                opacity += 20
+
+            elif hudState == 1 and opacity >= 255:
                 hudState = 2
 
             elif hudState == -1 and opacity > 0:
-                opacity -= 1
+                opacity -= 20
 
             elif hudState == -1 and opacity == 0:
                 hudState = 0
 
-            #renderHud(opacity)
+            renderHud(opacity)   # minimap — shows waypoints, bearing corridor, boat track
+            renderWaypointHUD() # top-left text HUD
 
             if counter % 250 == 1:
                 nautono.addTrack()
@@ -855,12 +948,7 @@ class SIM_ROS_HANDLER(Node):
               #  self.latitude_publisher.publish(f)
 
                 f.data = float(lon)
-              #  self.longitude_publisher.publish(f)
-
-            f.data = float(wp.x)
-            self.waypoint_longitude_publisher.publish(f)
-            f.data = float(wp.y)
-            self.waypoint_latitude_publisher.publish(f)
+                self.longitude_publisher.publish(f)                
         
 
         #f.data = float(math.degrees(nautono.course)) # This will have to remain in the nav algorithm
@@ -890,9 +978,7 @@ def main(args=None):
 
     while rclpy.ok():
         rclpy.spin_once(sailboat_sim, timeout_sec=0.0)
-        
-        # Limit to 50 FPS (IMPORTANT)
-        clock.tick(50)
+
 
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically

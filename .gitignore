@@ -5,3 +5,5 @@ install
 temp.mod
 output.txt
 polar.csv
+.codex
+__pycache__

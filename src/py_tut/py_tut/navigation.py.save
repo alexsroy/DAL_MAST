@@ -16,7 +16,7 @@ maxFlapDeflection = 45
 
 # If you change this variable, change the one in waypoint control.py
 # Set to 1000 pixels for simulator, change to 0.0005 for real GPS coordinates
-D = 0.002 # Tacking box width in pixel space
+D = 1000 # Tacking box width in pixel space
 
 BBReverseSpace = 2 # Behind the previous WP distance of BB
 
@@ -68,12 +68,11 @@ class navigationNode(Node):
         # Variables to store inputs COPY FROM CONTROLS
         self.windAngle = 0
 
+
         self.sailAngle = 0
         self.flapAngle = 0
         self.rudderAngle = 0
 
-        # Don't run navigation until we have real waypoint data
-        self.waypoints_received = False
 
         # Publication rates
         #self.target_heading_pub_callback()
@@ -93,7 +92,6 @@ class navigationNode(Node):
 
     def waypoint_latitude_callback(self, msg):
         self.waypointLatitude = msg.data
-        self.waypoints_received = True  # real data has arrived, safe to navigate
 
     def previous_waypoint_longitude_callback(self, msg):
         self.prevWaypointLongitude = msg.data
@@ -108,10 +106,6 @@ class navigationNode(Node):
         self.heading = msg.data
 
     def bearing_to_waypoint_callback(self):
-        # Don't act on uninitialised zero values — wait until real waypoint data arrives
-        if not self.waypoints_received:
-            return
-
         # Get bearing
         self.bearingAngle = math.degrees(math.atan2(self.waypointLatitude - self.prevWaypointLatitude, self.waypointLongitude - self.prevWaypointLongitude))
         self.bearing = [(self.prevWaypointLongitude - BBReverseSpace * math.cos(math.radians(self.bearingAngle)), self.prevWaypointLatitude - BBReverseSpace * math.sin(math.radians(self.bearingAngle))), (self.waypointLongitude, self.waypointLatitude)]
@@ -142,101 +136,89 @@ class navigationNode(Node):
         self.bb_coords.publish(bbcoords)
 
         # Check if boat is in BB
-        if self.is_point_in_rect((self.longitude, self.latitude), boundingBox):
-            print('inside the bounding box')
+        if self.pointInRect((self.longitude, self.latitude), boundingBox):
             if abs(self.shortestAngle(self.windAngle, self.bearingAngle)) < self.TACKING_ANGLE:
-                #if tacking check to fix constant tacking bug
-                if self.tacking == 0:
-                    self.tacking = 1
+                # If tacking
+                vector1 = [math.cos(math.radians(self.shortestAngle(self.bearingAngle, self.windAngle + self.TACKING_ANGLE))), math.sin(math.radians(self.shortestAngle(self.bearingAngle, self.windAngle + self.TACKING_ANGLE)))]
+                vector2 = [math.cos(math.radians(self.shortestAngle(self.bearingAngle, self.windAngle - self.TACKING_ANGLE))), math.sin(math.radians(self.shortestAngle(self.bearingAngle, self.windAngle - self.TACKING_ANGLE)))]
 
-                    vector1 = [math.cos(math.radians(self.shortestAngle(self.bearingAngle, self.windAngle + self.TACKING_ANGLE))), math.sin(math.radians(self.shortestAngle(self.bearingAngle, self.windAngle + self.TACKING_ANGLE)))]
-                    vector2 = [math.cos(math.radians(self.shortestAngle(self.bearingAngle, self.windAngle - self.TACKING_ANGLE))), math.sin(math.radians(self.shortestAngle(self.bearingAngle, self.windAngle - self.TACKING_ANGLE)))]
+                # publish the fact that we're tacking
+                navstate = String()
+                navstate.data = "tacking"
+                self.nav_state.publish(navstate)
 
-                    # publish the fact that we're tacking
-                    navstate = String()
-                    navstate.data = "tacking"
-                    self.nav_state.publish(navstate)
+                # c = sqrt a squared + b squared
+                BBLen = ((self.bearing[1][0] - self.bearing[0][0]) ** 2 + (self.bearing[1][1] - self.bearing[0][1]) ** 2) ** 0.5
+                upperBnd = D / 2
+                lowerBnd = - D / 2
 
-                    # c = sqrt a squared + b squared
-                    BBLen = ((self.bearing[1][0] - self.bearing[0][0]) ** 2 + (self.bearing[1][1] - self.bearing[0][1]) ** 2) ** 0.5
-                    upperBnd = D / 2
-                    lowerBnd = - D / 2
+                # Rotate the co-ordinate grid to align with the bearing's point away from the WP
+                # https://en.wikipedia.org/wiki/Rotation_matrix
 
-                    # Rotate the co-ordinate grid to align with the bearing's point away from the WP
-                    # https://en.wikipedia.org/wiki/Rotation_matrix
+                # Start by translating then rotating, where x and y are the variables to feed the LP
+                # https://academo.org/demos/rotation-about-point/
+                x = self.longitude - self.bearing[0][0]
+                y = self.latitude - self.bearing[0][1]
+                boatPosition = [x * math.cos(math.radians(-self.bearingAngle)) - y * math.sin(math.radians(-self.bearingAngle)), x * math.sin(math.radians(-self.bearingAngle)) + y * math.cos(math.radians(-self.bearingAngle))]
 
-                    # Start by translating then rotating, where x and y are the variables to feed the LP
-                    # https://academo.org/demos/rotation-about-point/
-                    x = self.longitude - self.bearing[0][0]
-                    y = self.latitude - self.bearing[0][1]
-                    boatPosition = [x * math.cos(math.radians(-self.bearingAngle)) - y * math.sin(math.radians(-self.bearingAngle)), x * math.sin(math.radians(-self.bearingAngle)) + y * math.cos(math.radians(-self.bearingAngle))]
+                replacements = {
+                    "~" : upperBnd,
+                    "@" : BBLen,
+                    "^" : boatPosition[0],
+                    "&" : boatPosition[1],
+                    "!" : vector1[0], # NOTE in the LP it's organized by X components as one parameter, and Y components as another
+                    "?" : vector1[1], # Read the LP carefully
+                    "$" : vector2[0],
+                    "%" : vector2[1]
+                }
 
-                    # Build an LP constraint to favour the existing heading
-                    if abs(self.shortestAngle(self.heading, self.windAngle + self.TACKING_ANGLE)) < abs(self.shortestAngle(self.heading, self.windAngle - self.TACKING_ANGLE)):
-                        initDir = 1
-                    else:
-                        initDir = 0
+                # getting the nav template path properly for ros2
+                package_share_directory = get_package_share_directory('py_tut')
+                nav_template_path = os.path.join(package_share_directory, 'navigationTemplate.mod')
 
-                    replacements = {
-                        "~" : upperBnd,
-                        "@" : BBLen,
-                        "^" : boatPosition[0],
-                        "&" : boatPosition[1],
-                        "!" : vector1[0], # NOTE in the LP it's organized by X components as one parameter, and Y components as another
-                        "?" : vector1[1], # Read the LP carefully
-                        "$" : vector2[0],
-                        "%" : vector2[1],
-                        "_" : initDir
-                    }
+                # Take the template, and replace our special characters with the values stored in the dict above
+                template = Path(nav_template_path).read_text()
+                for character in replacements:
+                    template = template.replace(character, str(replacements[character]))
 
-                    # getting the nav template path properly for ros2
-                    package_share_directory = get_package_share_directory('py_tut')
-                    nav_template_path = os.path.join(package_share_directory, 'navigationTemplate.mod')
+                # Write to a .mod file and then run using GLPK, and output result to output.txt
+                with open("temp.mod", "w") as text_file:
+                    text_file.write(template)
+                os.system('glpsol --math temp.mod > output.txt') # Removed comment that Andrew found scary, it's just bash
 
-                    # Take the template, and replace our special characters with the values stored in the dict above
-                    template = Path(nav_template_path).read_text()
-                    for character in replacements:
-                        template = template.replace(character, str(replacements[character]))
 
-                    # Write to a .mod file and then run using GLPK, and output result to output.txt
-                    with open("temp.mod", "w") as text_file:
-                        text_file.write(template)
-                    os.system('glpsol --math temp.mod > output.txt') # Removed comment that Andrew found scary, it's just bash
+                # Once operating system returns value, read output file to a variable
+                results = Path('output.txt').read_text()
 
-                    # Once operating system returns value, read output file to a variable
-                    results = Path('output.txt').read_text()
+                if "PROBLEM HAS NO PRIMAL FEASIBLE SOLUTION" in results: # Pick a direction (changes every minutes) to tack to if the LP fails
+                    self.headingTarget = self.windAngle + (45 * (time.time() // 60 % 2) - 45 * (1 - time.time() // 60 % 2))
 
-                    if "PROBLEM HAS NO PRIMAL FEASIBLE SOLUTION" in results: # Pick a direction (changes every minutes) to tack to if the LP fails
-                        self.headingTarget = self.windAngle + (45 * (time.time() // 60 % 2) - 45 * (1 - time.time() // 60 % 2))
-
-                    else:
-                        # Parsing the output to see which direction has a non-zero value first
-                        temp = results.split("magDir1")[1:-1]
-                        counter1 = 0
-                        for entry in temp:
-                            if entry.split(" ")[-1][0] != '0':
-                                break
-                            else:
-                                counter1 += 1
-
-                        temp = results.split("magDir2")[1:-1]
-                        counter2 = 0
-                        for entry in temp:
-                            if entry.split(" ")[-1][0] != '0':
-                                break
-                            else:
-                                counter2 += 1
-
-                        if counter1 < counter2:
-                            self.headingTarget = (self.windAngle + self.TACKING_ANGLE) % 360
+                else:
+                    # Parsing the output to see which direction has a non-zero value first
+                    temp = results.split("magDir1")[1:-1]
+                    counter1 = 0
+                    for entry in temp:
+                        if entry.split(" ")[-1][0] != '0':
+                            break
                         else:
-                            self.headingTarget = (self.windAngle - self.TACKING_ANGLE) % 360
-                            
-                
+                            counter1 += 1
+
+                    temp = results.split("magDir2")[1:-1]
+                    counter2 = 0
+                    for entry in temp:
+                        if entry.split(" ")[-1][0] != '0':
+                            break
+                        else:
+                            counter2 += 1
+
+                    if counter1 < counter2:
+                        self.headingTarget = (self.windAngle + self.TACKING_ANGLE) % 360
+                    else:
+                        self.headingTarget = (self.windAngle - self.TACKING_ANGLE) % 360
 
             else:
-                # reset tack state
-                self.tacking = 0
+                # Straight sailing (very mathematically complex)
+                # update: changed to bearing angle
 
                 # publish the fact that we're straight sailing
                 navstate = String()
@@ -247,18 +229,14 @@ class navigationNode(Node):
 
         # If boat is out of the BB
         else:
-            print('out of bounding box')
+
             # publish the fact that we're out of the bounding box
             navstate = String()
             navstate.data = "out of BB"
             self.nav_state.publish(navstate)
 
-            # Reset tacking so the LP is re-evaluated fresh when we re-enter the BB
-            self.tacking = 0
-
             slope = math.tan(math.radians(self.bearingAngle))
-            # Correct y-intercept: b = y0 - m*x0 (line passes through bearing[0])
-            intercept = self.bearing[0][1] - slope * self.bearing[0][0]
+            intercept = self.bearing[0][1]
 
             # y = mx + b, and we check whether the boat is above or below it.
             # If we are greater than y, we want to set course for bearing - 45 and if we're above it we want to set heading for bearing + 45
@@ -267,17 +245,13 @@ class navigationNode(Node):
             # Quadrents 2 and 3 need to reverse the direction we're trying to get do dependant on if we're above or below the line
             targetLatitude = slope * self.longitude + intercept
 
-            # Normalize to [0, 360] so that atan2's negative outputs (e.g. -91° = 269°) are
-            # correctly classified into Q2/Q3 vs Q1/Q4
-            normBearing = self.bearingAngle % 360
-
             BBReturnHeading = 0
             if self.latitude >= targetLatitude: # Basically to sail back to the BB, we need to sail back to it at a 45 degree angle.
                 #                                 If we are above the line, we need to take the bearing and add 45 degrees, only in quadrents 2 and 3
                 #                                 in quadrents 1 and 4, we subtract 45 degrees
-                BBReturnHeading = ((normBearing >= 90 and normBearing <= 270) * (normBearing + 45) + (normBearing < 90 or normBearing > 270) * (normBearing - 45)) % 360
+                BBReturnHeading = ((self.bearingAngle >= 90 and self.bearingAngle <= 270) * (self.bearingAngle + 45) + (self.bearingAngle < 90 or self.bearingAngle > 270) * (self.bearingAngle - 45)) % 360
             else:                               # If we are below, we reverse the logic and subtract 45 in quadrents 2 and 3
-                BBReturnHeading = ((normBearing >= 90 and normBearing <= 270) * (normBearing - 45) + (normBearing < 90 or normBearing > 270) * (normBearing + 45)) % 360
+                BBReturnHeading = ((self.bearingAngle >= 90 and self.bearingAngle <= 270) * (self.bearingAngle - 45) + 1(self.bearingAngle < 90 or self.bearingAngle > 270) * (self.bearingAngle + 45)) % 360
 
 
             # Now w need to do a check against the wind direction.
@@ -295,9 +269,7 @@ class navigationNode(Node):
 
             self.headingTarget = BBReturnHeading
 
-        print("heading", self.heading, "HEADING TARGET:", self.headingTarget, "\n", "BEARING: ", self.bearingAngle, "WIND:", self.windAngle, "\n", "TACKING DIST: ", self.TACKING_ANGLE)
-        
-        print('waypoint lat, lon', self.waypointLatitude, ", ", self.waypointLongitude, 'Prev waypoint lat, lon', self.prevWaypointLatitude, ", ", self.prevWaypointLongitude)
+
         # Finally make sure to publish the target heading lolololol
         f = Float32()
         #print(type(f.data), "    tt    ", type(self.headingTarget))
@@ -326,37 +298,9 @@ class navigationNode(Node):
         return abs((B[0] * A[1] - A[0] * B[1]) + (C[0] * B[1] - C[1] * B[0]) + (A[0] * C[1] - A[1] * C[0])) / 2
 
     # This line of code may need a magic number tbh to make sure that we are certain the boat is out of the the BB
-    # def pointInRect(self, point, BB): # https://stackoverflow.com/questions/17136084/checking-if-a-point-is-inside-a-rotated-rectangle
-    #     return self.calcTriArea(BB[0], point, BB[3]) + self.calcTriArea(BB[3], point, BB[2]) + self.calcTriArea(BB[2], point, BB[1]) + self.calcTriArea(BB[0], point, BB[1]) <= D * (abs(BB[0][0] - BB[3][0]) / (math.cos(math.radians(self.bearingAngle)) + 0.000000000000000001))
+    def pointInRect(self, point, BB): # https://stackoverflow.com/questions/17136084/checking-if-a-point-is-inside-a-rotated-rectangle
+        return self.calcTriArea(BB[0], point, BB[3]) + self.calcTriArea(BB[3], point, BB[2]) + self.calcTriArea(BB[2], point, BB[1]) + self.calcTriArea(BB[0], point, BB[1]) <= D * (abs(BB[0][0] - BB[3][0]) / (math.cos(math.radians(self.bearingAngle)) + 0.000000000000000001))
 
-    """
-    checks if a point is inside a rotated rectangle using vector dot products.
-    
-    :param pt: Tuple (x, y) for the target point.
-    :param rect_corners: List of 4 tuples [(x, y), ...] representing the vertices 
-                         of the rectangle in sequential order.
-
-    https://stackoverflow.com/questions/2752725/finding-whether-a-point-lies-inside-a-rectangle-or-not
-    response by matt burns showcases this function in javascript
-    """
-    def is_point_in_rect(self, pt, rect_corners):
-        A, B, C, D = rect_corners
-        
-        # vector AM (A to target point)
-        AM = (pt[0] - A[0], pt[1] - A[1])
-        # vector AB (A to B)
-        AB = (B[0] - A[0], B[1] - A[1])
-        # vector AD (A to D)
-        AD = (D[0] - A[0], D[1] - A[1])
-        
-        # calculate the dot products
-        dot_AM_AB = AM[0] * AB[0] + AM[1] * AB[1]
-        dot_AB_AB = AB[0] * AB[0] + AB[1] * AB[1]
-        dot_AM_AD = AM[0] * AD[0] + AM[1] * AD[1]
-        dot_AD_AD = AD[0] * AD[0] + AD[1] * AD[1]
-        
-        # check if scalar projections fall within the rectangle's lengths
-        return (0 <= dot_AM_AB <= dot_AB_AB) and (0 <= dot_AM_AD <= dot_AD_AD)
 
 def main():
     rclpy.init()
@@ -370,3 +314,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
