@@ -929,23 +929,23 @@ class SIM_ROS_HANDLER(Node):
         f = Float32()
 
         if PUBLISH_VALUES:
-            f.data = math.degrees(wind_direction)
-            self.windVane_publisher.publish(f)
-            f.data = math.degrees(nautono.angle)
-            self.compass_publisher.publish(f)
+           # f.data = math.degrees(wind_direction)
+           # self.windVane_publisher.publish(f)
+           # f.data = math.degrees(nautono.angle)
+           # self.compass_publisher.publish(f)
 
-            #print(type(nautono.flapDeflection))
-            f.data = float(nautono.flapDeflection)
-            self.flapAngle_publisher.publish(f)
-            f.data = float(nautono.rudderDeflection)
-            self.rudderAngle_publisher.publish(f)
+           # print(type(nautono.flapDeflection))
+           # f.data = float(nautono.flapDeflection)
+           # self.flapAngle_publisher.publish(f)
+           # f.data = float(nautono.rudderDeflection)
+           # self.rudderAngle_publisher.publish(f)
 
             # Convert sim XY → GPS
             if nautono.ref_lat is not None and nautono.ref_lon is not None:
                 lat, lon = nautono.xy_to_gps(nautono.x, nautono.y)
 
                 f.data = float(lat)
-                self.latitude_publisher.publish(f)
+              #  self.latitude_publisher.publish(f)
 
                 f.data = float(lon)
                 self.longitude_publisher.publish(f)                
