@@ -46,7 +46,7 @@ class controlConfigurationService(Node):
         self.flapAngle = float(0)
         self.rudderAngle = float(0)
         self.targetHeading = float(0)
-        self.following = False
+        self.following = True
 
         # Publication rates
         rates = [0.1, 0.1, 0.2]
@@ -85,10 +85,10 @@ class controlConfigurationService(Node):
 
 # possible thrust vectors
         t1 = (self.windAngle + angle_of_attack + thrust_sail_offset) % 360
-        Heading_to_t1 = shortestAngle(t1, self.targetHeading)
+        Heading_to_t1 = shortestAngle(t1, self.heading_direction)
 
         t2 = (self.windAngle - angle_of_attack - thrust_sail_offset) % 360
-        Heading_to_t2 = shortestAngle(t2, self.targetHeading)
+        Heading_to_t2 = shortestAngle(t2, self.heading_direction)
 
 #logic using existing shortest angle function
         if self.following:
