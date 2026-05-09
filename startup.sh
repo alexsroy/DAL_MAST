@@ -21,7 +21,7 @@ docker run -it \
   -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
   -e ROS_DOMAIN_ID=0 \
   --net=host \
-  --device="MOVELLA_SYMLINK" \
+  --device="$MOVELLA_SYMLINK:/dev/ttyUSB0" \
   --privileged \
   "$IMAGE"
 
