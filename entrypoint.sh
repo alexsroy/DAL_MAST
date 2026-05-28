@@ -3,13 +3,8 @@ set -e
 
 source "/opt/ros/jazzy/setup.bash"
 
-# check if the workspace has been built yet
-if [ ! -f "/workspace/install/setup.bash" ]; then
-    echo "building workspace..."
-    colcon build
-else
-    echo "colcon build files already found, skipping pre-emptive build."
-fi
+echo "building workspace..."
+colcon build
 
 source "/workspace/install/setup.bash"
 

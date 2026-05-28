@@ -85,10 +85,10 @@ class controlConfigurationService(Node):
 
 # possible thrust vectors
         t1 = (self.windAngle + angle_of_attack + thrust_sail_offset) % 360
-        Heading_to_t1 = shortestAngle(t1, self.heading_direction)
+        Heading_to_t1 = shortestAngle(t1, self.heading)
 
         t2 = (self.windAngle - angle_of_attack - thrust_sail_offset) % 360
-        Heading_to_t2 = shortestAngle(t2, self.heading_direction)
+        Heading_to_t2 = shortestAngle(t2, self.heading)
 
 #logic using existing shortest angle function
         if self.following:
