@@ -157,10 +157,6 @@ class PCBReadWrite(Node):
         writeStr = ""
         variablesToWrite = [["targetSailAngle", self.targetSailAngle], ["targetFlapAngle", self.targetFlapAngle], ["targetRudderAngle", self.targetRudderAngle], ["targetBearing", self.targetBearing], ["waypointLon", self.waypointLon], ["waypointLat", self.waypointLat], ["headingAngle", self.headingAngle], ["latitude", self.latitude], ["longitude", self.longitude], ["windAngle", self.windAngle]]
 
-        writeStr += '{\"TargetsOutput\":[{' + variablesToWrite[0][0] + '\": ' + str(variablesToWrite[0][1])
-
-
-
         for var in variablesToWrite:
             writeStr += ', \"' + var[0] + '\": ' + str(var[1])
 
