@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float64
+from std_msgs.msg import Float32
 from geometry_msgs.msg import Vector3Stamped
 from rclpy.qos import qos_profile_sensor_data
 
@@ -9,11 +9,11 @@ class TopicRelayNode(Node):
         super().__init__('topic_relay_node')
 
         # 1. Create the Publisher
-        self.z_pub = self.create_publisher(Float64, '/heading_direction', 10)
-        self.lat_pub = self.create_publisher(Float64, '/latitude', 10)
-        self.lon_pub = self.create_publisher(Float64, '/longitude', 10)
-        self.roll_pub = self.create_publisher(Float64, '/roll', 10)
-        self.pitch_pub = self.create_publisher(Float64, 'pitch', 10)
+        self.z_pub = self.create_publisher(Float32, '/heading_direction', 10)
+        self.lat_pub = self.create_publisher(Float32, '/latitude', 10)
+        self.lon_pub = self.create_publisher(Float32, '/longitude', 10)
+        self.roll_pub = self.create_publisher(Float32, '/roll', 10)
+        self.pitch_pub = self.create_publisher(Float32, '/pitch', 10)
         # 2. Create the Subscriber
         # It calls 'listener_callback' every time a message is received
         self.z_sub = self.create_subscription(
@@ -33,25 +33,25 @@ class TopicRelayNode(Node):
         # 3. Parsing/Processing Logic
         parsed_data = msg.vector.z
         # 4. Publish the new message
-        new_msg = Float64()
+        new_msg = Float32()
         new_msg.data = parsed_data
         self.z_pub.publish(new_msg)
         parsed_data = msg.vector.x
-        new_msg = Float64()
+        new_msg = Float32()
         new_msg.data = parsed_data
         self.roll_pub.publish(new_msg)
         parsed_data = msg.vector.y
-        new_msg = Float64()
+        new_msg = Float32()
         new_msg.data = parsed_data
         self.pitch_pub.publish(new_msg)
 
     def listener_callback_lat(self, msg):
         parsed_data = msg.vector.x
-        new_msg = Float64()
+        new_msg = Float32()
         new_msg.data = parsed_data
         self.lat_pub.publish(new_msg)
         parsed_data = msg.vector.y
-        new_msg = Float64()
+        new_msg = Float32()
         new_msg.data = parsed_data
         self.lon_pub.publish(new_msg)
 
