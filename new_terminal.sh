@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# opens a new shell inside the already-running dalmast container.
+# opens a new shell inside the already-running dalmast service.
 # all ROS2 nodes started here share the same network as the main container,
 # so topics published by PCBComm will be visible to waypointControl and vice versa.
 
-CONTAINER_NAME="dalmast"
+RUNNING_CONTAINER="$(docker compose -f compose.yaml ps -q --status running dalmast)"
 
-if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-    echo "Container '${CONTAINER_NAME}' is not running. Start it with ./startup.sh first."
+if [ -z "$RUNNING_CONTAINER" ]; then
+    echo "Service 'dalmast' is not running. Start it with ./startup.sh first."
     exit 1
 fi
 
-docker exec -it "$CONTAINER_NAME" bash -c 'source /opt/ros/jazzy/setup.bash && source /workspace/install/setup.bash && bash'
+docker compose -f compose.yaml exec dalmast bash -lc 'source /opt/ros/jazzy/setup.bash && if [ -f /workspace/install/setup.bash ]; then source /workspace/install/setup.bash; fi && exec bash'

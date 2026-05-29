@@ -1,0 +1,5 @@
+services:
+  dalmast:
+    devices:
+      - /dev/serial/by-id/usb-Xsens_MTi_USB_Converter_DB9K3SNP-if00-port0:/dev/ttyUSB0
+      - /dev/ttyS0:/dev/ttyS0
