@@ -1,5 +1,0 @@
-float64 waypoint_latitude
-float64 waypoint_longitude
-float64 tacking_waypoint_latitude
-float64 tacking_waypoint_longitude
-float64 target_heading

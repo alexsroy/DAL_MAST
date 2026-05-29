@@ -14,7 +14,7 @@ class PCBReadWrite(Node):
 
         self.PCBStr = ""
 
-        self.ser = serial.Serial("/dev/ttyS0", 115200, timeout = 0.1) #change "ttyS0" to whatever port is being used.
+        self.ser = serial.Serial("/dev/ttyS0", 9600, timeout = 0.1) #change "ttyS0" to whatever port is being used.
         self.ser.reset_input_buffer()
 
         # INPUTS
