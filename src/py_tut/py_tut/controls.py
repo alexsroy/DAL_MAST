@@ -1,187 +1,119 @@
-import rclpy
+"""Turns the target heading and the wind into sail, flap and rudder targets.
 
+Angles
+  heading_direction, heading_target_direction: ENU degrees (the MTi's yaw).
+  wind_direction: the windvane's apparent wind angle, clockwise from the bow.
+  sail_angle_target: the wing's angle in the windvane's frame, [0, 360);
+    the STM32 adds its encoder's centre (180) and turns the wing there.
+  rudder_angle_target: degrees, positive when the heading is counter-
+    clockwise of the target (the existing sign), within +/- max_rudder_deg.
+
+When following is off, the rudder centres and the wing feathers into the
+apparent wind, so the boat stops driving instead of holding a last target.
+The wing also feathers while the boat tacks (control_law.sail_target).
+"""
+
+import math
+import time
+
+import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import Bool, Float32
 
-maxFlapDeflection = 45
-thrust_sail_offset = 57         #this
-angle_of_attack = 8             #this
+from py_tut.control_law import rudder_command, sail_target, wrap180
 
-def shortestAngle(referenceAngle, targetAngle):
-    returnAngle = referenceAngle - targetAngle
-
-    if returnAngle < -180:
-        returnAngle = 360 - (targetAngle - referenceAngle)
-
-    if returnAngle > 180:
-        returnAngle = (360 - (referenceAngle - targetAngle)) * -1
-
-    return returnAngle
-
+HEADING_RATE_TAU_S = 0.3
 
 
 class controlConfigurationService(Node):
 
     def __init__(self):
-        super().__init__('control_configuration_node')
+        super().__init__('controls')
+        self.declare_parameter('rudder_kp', 0.8)          # degrees of rudder per degree off course
+        self.declare_parameter('rudder_kd', 0.4)          # per degree/second of turn
+        self.declare_parameter('max_rudder_deg', 30.0)    # past about 25 degrees a rudder stalls and brakes
+
         self.windVane_subscription = self.create_subscription(Float32, 'wind_direction', self.wind_callback, 10)
         self.compass_subscription = self.create_subscription(Float32, 'heading_direction', self.compass_callback, 10)
         self.targetHeading_subscription = self.create_subscription(Float32, 'heading_target_direction', self.heading_target_callback, 10)
         self.following_subscription = self.create_subscription(Bool, 'following', self.following_callback, 10)
 
-        # The inputs and outputs for this node
-        self.sailAngle_subscription = self.create_subscription(Float32, 'sail_angle', self.sail_callback, 10)
-        self.flapAngle_subscription = self.create_subscription(Float32, 'flap_angle', self.flap_callback, 10)
-        self.rudderAngle_subscription = self.create_subscription(Float32, 'rudder_angle', self.rudder_callback, 10)
-
         self.targetSailAngle_publisher = self.create_publisher(Float32, 'sail_angle_target', 10)
         self.targetFlapAngle_publisher = self.create_publisher(Float32, 'flap_angle_target', 10)
-        self.targetRudderAngle_publisher = self.create_publisher(Float32, 'rudder_angle_target', 10)         #this
+        self.targetRudderAngle_publisher = self.create_publisher(Float32, 'rudder_angle_target', 10)
 
-        # Variables to store inputs
-        self.windAngle = float(0)
-        self.heading = float(0)
-        self.sailAngle = float(0)
-        self.flapAngle = float(0)
-        self.rudderAngle = float(0)
-        self.targetHeading = float(0)
+        self.windAngle = 0.0
+        self.heading = 0.0
+        self.headingRate = 0.0               # degrees per second, smoothed
+        self._last_heading = None
+        self.targetHeading = None            # nothing to steer to until navigation says
         self.following = True
+        self.wingSide = 1
 
-        # Publication rates
-        rates = [0.1, 0.1, 0.2]
+        self.sailTimer = self.create_timer(0.1, self.sail_pub_callback)
+        self.flapTimer = self.create_timer(0.1, self.flap_pub_callback)
+        self.rudderTimer = self.create_timer(0.1, self.rudder_pub_callback)
 
-        self.sailTimer = self.create_timer(rates[0], self.sail_pub_callback)
-        self.flapTimer = self.create_timer(rates[1], self.flap_pub_callback)
-        self.rudderTimer = self.create_timer(rates[2], self.rudder_pub_callback)
-
-    # Store topics to class members
     def wind_callback(self, msg):
         self.windAngle = msg.data
 
     def compass_callback(self, msg):
+        now = time.monotonic()
+        if self._last_heading is not None:
+            then, previous = self._last_heading
+            dt = now - then
+            if dt > 1e-3:
+                rate = wrap180(msg.data - previous) / dt
+                k = 1.0 - math.exp(-dt / HEADING_RATE_TAU_S)
+                self.headingRate += (rate - self.headingRate) * k
+        self._last_heading = (now, msg.data)
         self.heading = msg.data
 
     def heading_target_callback(self, msg):
         self.targetHeading = msg.data
 
-    def sail_callback(self, msg):
-        self.sailAngle = msg.data
-
-    def flap_callback(self, msg):
-        self.flapAngle = msg.data
-
-    def rudder_callback(self, msg):
-        self.rudderAngle = msg.data
-
-    def following_callback(self, msg):                    #this
+    def following_callback(self, msg):
         self.following = msg.data
-    
 
-
-    # These are the callbacks that run on a timer to update the published targets
-    def sail_pub_callback(self): 
+    def sail_pub_callback(self):
         msg = Float32()
-
-# possible thrust vectors
-        t1 = (self.windAngle + angle_of_attack + thrust_sail_offset) % 360
-        Heading_to_t1 = shortestAngle(t1, self.heading)
-
-        t2 = (self.windAngle - angle_of_attack - thrust_sail_offset) % 360
-        Heading_to_t2 = shortestAngle(t2, self.heading)
-
-#logic using existing shortest angle function
         if self.following:
-            if abs(Heading_to_t1) <= abs(Heading_to_t2):
-                msg.data = float((self.windAngle + angle_of_attack) % 360)
-            else:
-                msg.data = float((self.windAngle - angle_of_attack) % 360)
-
-        self.targetSailAngle_publisher.publish(msg) #publish 
+            sail, self.wingSide = sail_target(self.windAngle, self.heading, self.targetHeading,
+                                              self.wingSide)
+            msg.data = float(sail)
+        else:
+            msg.data = float(self.windAngle % 360)       # feathered: no drive
+        self.targetSailAngle_publisher.publish(msg)
 
     def flap_pub_callback(self):
-        msg = Float32()
-
-        """
-             * If the boat is sailing into the wind, we switch the angle of flap when heading - wind angle is at zero
-             * Otherwise we switch the flap angle at +/- 180 degrees, the number being positive or negative dependant on if the boat is going
-             *   or down
-
-        """
-        # Sailing into the wind
-        if (self.windAngle >= 0 and self.heading >= 0) or (self.windAngle <= 0 and self.heading <= 0):
-            if self.windAngle - self.heading > 20:
-                flapTarget = maxFlapDeflection
-
-            elif self.windAngle - self.heading < -20:
-                flapTarget = -1 * maxFlapDeflection
-
-            else: # If we're real close to the wind
-                flapTarget = -1 * maxFlapDeflection # 0
-
-        # Sailing away from the wind
-        elif self.windAngle < 0 and self.heading > 0:
-            if self.windAngle - self.heading < -200:
-                flapTarget = maxFlapDeflection
-
-            elif self.windAngle - self.heading > -160:
-                flapTarget = -1 * maxFlapDeflection
-
-            else: # Jibin time
-                flapTarget = -1 * maxFlapDeflection # 0
-
-        # Sailing away from the wind
-        elif self.windAngle > 0 and self.heading < 0:
-            if self.windAngle - self.heading > 200:
-                flapTarget = -1 * maxFlapDeflection
-
-            elif self.windAngle - self.heading < 160:
-                flapTarget = maxFlapDeflection
-
-            else: # Jibin time
-                flapTarget = -1 * maxFlapDeflection # 0
-
-        #global wp
-        #if ((self.x - wp.x) ** 2 + (self.y - wp.y) ** 2) ** 0.5 < wp.rad:
-        #    self.flapTarget = 0
-        msg.data = float(flapTarget)
-
-        #NOTE: TEMPORARILY DISABLED
-        #self.targetFlapAngle_publisher.publish(msg)
+        # The flap isn't driven yet (the STM32 ignores targetFlapAngle), and the
+        # old logic compared the windvane's angle with the compass heading,
+        # which are in different frames. Rebuild it on the wing side above.
+        pass
 
     def rudder_pub_callback(self):
         msg = Float32()
-
-        #print("heading: ", self.heading, "target heading: ", self.targetHeading)
-
-        print(shortestAngle(self.heading, self.targetHeading))
-
-        if shortestAngle(self.heading, self.targetHeading) < 0:
-            rudderTarget = max(shortestAngle(self.heading, self.targetHeading), -45)
-
-
+        if not self.following or self.targetHeading is None:
+            msg.data = 0.0
         else:
-            rudderTarget = min(shortestAngle(self.heading, self.targetHeading) / 2, 45)
-
-
-        print(rudderTarget, " rrR")
-
-        msg.data = float(rudderTarget)
+            msg.data = float(rudder_command(self.heading, self.targetHeading, self.headingRate,
+                                            self.get_parameter('rudder_kp').value,
+                                            self.get_parameter('rudder_kd').value,
+                                            self.get_parameter('max_rudder_deg').value))
         self.targetRudderAngle_publisher.publish(msg)
 
 
-
-    def voidCallback(self):
-        pass
-
 def main():
     rclpy.init()
-
     control_service = controlConfigurationService()
-
-    rclpy.spin(control_service)
-
-    rclpy.shutdown()
+    try:
+        rclpy.spin(control_service)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        control_service.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':
