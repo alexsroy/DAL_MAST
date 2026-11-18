@@ -7,7 +7,6 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
 	python3-colcon-common-extensions \
 	python3-pygame \
 	python3-serial \
-	glpk-utils \
 	libudev-dev \
 	libfastcdr-dev \
 	ros-jazzy-rmw-fastrtps-cpp \
