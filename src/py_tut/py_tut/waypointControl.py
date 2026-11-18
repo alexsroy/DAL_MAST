@@ -14,7 +14,10 @@ from std_msgs.msg import Bool
 import json
 
 
-GATE_WIDTH_METERS = 200
+# A waypoint counts as reached inside a circle this wide (ROS parameter
+# gate_width_m). It was 200 m, a 100 m radius, which let the boat turn for the
+# next mark long before reaching this one.
+GATE_WIDTH_METERS = 40
 FOLLOWING_ENABLED = True
 
 class waypointControl(Node):
@@ -32,7 +35,8 @@ class waypointControl(Node):
             self.origin = None
             self.meter_waypoints = []
         
-        self.gate_width = GATE_WIDTH_METERS
+        self.declare_parameter('gate_width_m', GATE_WIDTH_METERS)
+        self.gate_width = self.get_parameter('gate_width_m').value
         self.latitude = 0
         self.longitude = 0
         self.wpTracker = 0
@@ -74,13 +78,15 @@ class waypointControl(Node):
 
         self.bearingAngle = 0
         self.publish_waypoint_list()
-        msg = Bool()
-        msg.data = self.following_enabled
-        self.following_enabled_publisher.publish(msg)
-        self._advance_leg()
+        # The first leg goes to waypoint 0, the start mark: entering its gate
+        # starts the race (update()). Advancing here, as before, sent the boat
+        # to waypoint 1 first and pushed the start, and the finish, a lap late.
         
 
     def publish_waypoint_list(self):
+        # Also restate whether we're following: a node that starts after this
+        # one never saw the first message.
+        self.publish_following()
         msg = String()
         waypoint_list = {
             "waypoints": [
@@ -140,10 +146,12 @@ class waypointControl(Node):
 
             order = data.get("order")
 
-            if isinstance(order, int) and 0 <= order < len(self.waypoints):
-                removed = self.waypoints.pop(order)
-            else:
-                removed = self.waypoints.pop()
+            if not (isinstance(order, int) and 0 <= order < len(self.waypoints)):
+                order = len(self.waypoints) - 1
+            removed = self.waypoints.pop(order)
+            if order < self.current_leg:
+                self.current_leg -= 1          # keep sailing to the same mark
+            self._was_inside_gate = False
 
             self.publish_waypoint_list()
             print(f"Removed waypoint: {removed}")
@@ -166,17 +174,13 @@ class waypointControl(Node):
             self.race_started = False
             self.race_complete = False
             self._was_inside_gate = False
-            msg = Bool()
-            msg.data = True
-            self.following_enabled_publisher.publish(msg)
+            self.publish_following()
             print("Following enabled")
 
 
         elif cmd == "stopFollowing":
             self.following_enabled = False
-            msg = Bool()
-            msg.data = True
-            self.following_enabled_publisher.publish(msg)
+            self.publish_following()           # this used to send True, so the boat kept steering
             print("Following disabled")
         
         elif cmd == "setCurrentWaypoint":
@@ -285,9 +289,7 @@ class waypointControl(Node):
             return False
 
         inside, distance = self.point_in_gate(boat_pos)
-        print(f"Leg {self.current_leg} | Distance: {distance:.2f} m | Inside: {inside}")
-        print("Waypoints")
-        print(self.waypoints)
+        self.get_logger().debug(f"Leg {self.current_leg} | Distance: {distance:.2f} m | Inside: {inside}")
 
         if inside and not self._was_inside_gate:
             # PRE-START
@@ -307,6 +309,8 @@ class waypointControl(Node):
 
                     if self.max_laps is not None and self.lap_count >= self.max_laps:
                         self.race_complete = True
+                        self.following_enabled = False     # stop steering for a finished race
+                        self.publish_following()
                         print("Race complete")
                         self._was_inside_gate = True
                         return True
@@ -323,6 +327,11 @@ class waypointControl(Node):
 
         return False
 
+
+    def publish_following(self):
+        msg = Bool()
+        msg.data = bool(self.following_enabled)
+        self.following_enabled_publisher.publish(msg)
 
     def _advance_leg(self):
         self.current_leg += 1
